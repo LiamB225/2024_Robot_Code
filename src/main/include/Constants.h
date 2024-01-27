@@ -17,5 +17,9 @@
 namespace OperatorConstants {
 
 inline constexpr int kDriverControllerPort = 0;
+const int frontLeftID = 1;
+const int frontRightID = 2;
+const int backLeftID = 3;
+const int backRightID = 4;
 
 }  // namespace OperatorConstants
