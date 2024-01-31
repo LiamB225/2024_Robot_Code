@@ -6,14 +6,34 @@
 
 #include <frc/Drive/MecanumDrive.h>
 #include <rev/CANSparkMax.h>
-
+#include <vector>
+#include <units/length.h>
+#include <units/angle.h>
+#include <units/velocity.h>
+#include <units/acceleration.h>
+#include <units/angular_velocity.h>
+#include <units/angular_acceleration.h>
+#include <units/math.h>
+#include <frc/controller/ProfiledPIDController.h>
+#include <frc/trajectory/TrapezoidProfile.h>
 #include "Constants.h"
 
 class Drive {
  public:
   Drive();
 
+  frc::TrapezoidProfile<units::meters>::Constraints constraintsX{ 1_mps, 1_mps_sq};
+  frc::TrapezoidProfile<units::meters>::Constraints constraintsY{ 1_mps, 1_mps_sq};
+  frc::TrapezoidProfile<units::degrees>::Constraints constraintsRot{ 1_deg_per_s, 1_deg_per_s / 1_s};
+
+  frc::ProfiledPIDController<units::meters> pidX { 1.0, 0.0, 0.0, constraintsX };
+  frc::ProfiledPIDController<units::meters> pidY { 1.0, 0.0, 0.0, constraintsY };
+  frc::ProfiledPIDController<units::degrees> pidRot { 1.0, 0.0, 0.0, constraintsRot };
+
   void Cartesian(double drivePower, double strafePower, double turnPower);
+  void setTarget(std::vector<double> targetPos, std::vector<double> startPos);
+  void Track(std::vector<double> currentPos);
+  void endTargeting();
 
   rev::CANSparkMax frontLeftMotor {OperatorConstants::frontLeftID, rev::CANSparkMax::MotorType::kBrushless};
   rev::CANSparkMax frontRightMotor {OperatorConstants::frontRightID, rev::CANSparkMax::MotorType::kBrushless};

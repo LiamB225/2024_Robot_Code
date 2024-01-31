@@ -12,6 +12,7 @@
 
 #include "Drive.h"
 #include "Constants.h"
+#include "ATPS.h"
 
 class Robot : public frc::TimedRobot {
  public:
@@ -29,6 +30,7 @@ class Robot : public frc::TimedRobot {
 
  private:
   Drive *m_Drive;
+  ATPS *m_ATPS;
 
   frc::XboxController Xbox { OperatorConstants::kDriverControllerPort };
   double xboxLX = 0;
