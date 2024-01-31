@@ -5,7 +5,8 @@
 #include <frc2/command/CommandScheduler.h>
 #include <wpinet/PortForwarder.h>
 
-void Robot::RobotInit() {
+void Robot::RobotInit()
+{
   for (int port = 5800; port <= 5805; port++)
   {
     wpi::PortForwarder::GetInstance().Add(port, "limelight.local", port);
@@ -15,7 +16,8 @@ void Robot::RobotInit() {
   m_ATPS = new ATPS();
 }
 
-void Robot::RobotPeriodic() {
+void Robot::RobotPeriodic()
+{
   //frc2::CommandScheduler::GetInstance().Run();
 }
 
@@ -27,12 +29,16 @@ void Robot::AutonomousInit() {}
 
 void Robot::AutonomousPeriodic() {}
 
-void Robot::TeleopInit() {}
+void Robot::TeleopInit()
+{
+  m_Drive->SetTarget(0.0, 1.0, 0.0);
+}
 
-void Robot::TeleopPeriodic() {
+void Robot::TeleopPeriodic()
+{
   GetXbox();
   m_Drive->Cartesian(xboxLY, -xboxLX, -xboxRX);
-  m_ATPS->PositionStage();
+  m_Drive->Track(m_ATPS->PositionSpeaker());
 }
 
 void Robot::TestPeriodic() {}
@@ -41,7 +47,8 @@ void Robot::SimulationInit() {}
 
 void Robot::SimulationPeriodic() {}
 
-void Robot::GetXbox() {
+void Robot::GetXbox()
+{
   xboxLX = Xbox.GetLeftX();
   if(xboxLX < .2 && xboxLX > -.2)
   {
@@ -59,10 +66,13 @@ void Robot::GetXbox() {
   {
     xboxRX = 0;
   }
+
+  xboxRightBumper = Xbox.GetRightBumper();
 }
 
 #ifndef RUNNING_FRC_TESTS
-int main() {
+int main()
+{
   return frc::StartRobot<Robot>();
 }
 #endif

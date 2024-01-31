@@ -14,24 +14,27 @@ void Drive::Cartesian(double drivePower, double strafePower, double turnPower)
     myMecanumDrive->DriveCartesian(drivePower, strafePower, turnPower);
 }
 
-void Drive::setTarget(std::vector<double> targetPos, std::vector<double> startPos)
+void Drive::SetTarget(double targetXPos, double targetYPos, double targetRotPos)
 {
-    pidX.SetGoal((units::meter_t)(targetPos[0]));
-    pidY.SetGoal((units::meter_t)(targetPos[1]));
-    pidRot.SetGoal((units::degree_t)(targetPos[2]));
+    pidX.SetGoal((units::meter_t)(targetXPos));
+    pidY.SetGoal((units::meter_t)(targetYPos));
+    pidRot.SetGoal((units::degree_t)(targetRotPos));
 }
 
 void Drive::Track(std::vector<double> currentPos)
 {
-    int X = pidX.Calculate((units::meter_t)(currentPos[0]));
-    int Y = pidY.Calculate((units::meter_t)(currentPos[1]));
-    int Rot = pidRot.Calculate((units::degree_t)(currentPos[2]));
-    int newX = X * units::math::cos((units::degree_t)(currentPos[2])) - Y * units::math::sin((units::degree_t)(currentPos[2]));
-    int newY = X * units::math::sin((units::degree_t)(currentPos[2])) + Y * units::math::cos((units::degree_t)(currentPos[2]));
-    myMecanumDrive->DriveCartesian(newY, newX, Rot);
+    double X = pidX.Calculate((units::meter_t)(currentPos[0]));
+    double Y = pidY.Calculate((units::meter_t)(currentPos[1]));
+    double Rot = pidRot.Calculate((units::degree_t)(currentPos[2]));
+    double newX = X * units::math::cos((units::degree_t)(currentPos[2])) - Y * units::math::sin((units::degree_t)(currentPos[2]));
+    double newY = X * units::math::sin((units::degree_t)(currentPos[2])) + Y * units::math::cos((units::degree_t)(currentPos[2]));
+    //myMecanumDrive->DriveCartesian(newY, newX, Rot);
+    frc::SmartDashboard::PutNumber("ValueX", newX);
+    frc::SmartDashboard::PutNumber("ValueY", newY);
+    frc::SmartDashboard::PutNumber("ValueRot", Rot);
 }
 
-void Drive::endTargeting()
+void Drive::EndTargeting()
 {
 
 }

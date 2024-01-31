@@ -9,6 +9,7 @@
 #include <frc/TimedRobot.h>
 #include <frc2/command/CommandPtr.h>
 #include <frc/XboxController.h>
+#include <vector>
 
 #include "Drive.h"
 #include "Constants.h"
@@ -36,6 +37,7 @@ class Robot : public frc::TimedRobot {
   double xboxLX = 0;
   double xboxLY = 0;
   double xboxRX = 0;
+  bool xboxRightBumper = false;
 
   void GetXbox();
 };
