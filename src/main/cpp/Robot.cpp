@@ -31,14 +31,23 @@ void Robot::AutonomousPeriodic() {}
 
 void Robot::TeleopInit()
 {
-  m_Drive->SetTarget(0.0, 1.0, 0.0);
+  m_Drive->SetTarget(0.0, -1.0, 0.0);
 }
 
 void Robot::TeleopPeriodic()
 {
   GetXbox();
-  m_Drive->Cartesian(xboxLY, -xboxLX, -xboxRX);
-  m_Drive->Track(m_ATPS->PositionSpeaker());
+  std::vector<double> newPos;
+  newPos = m_ATPS->PositionStage();
+  if(newPos[0] == 0.0 && newPos[1] == 0.0 && newPos[2] == 0.0)
+  {
+    newPos = lastPos;
+  }
+  else
+  {
+    lastPos = newPos;
+  }
+  m_Drive->Track(newPos);
 }
 
 void Robot::TestPeriodic() {}

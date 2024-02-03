@@ -33,6 +33,8 @@ class Robot : public frc::TimedRobot {
   Drive *m_Drive;
   ATPS *m_ATPS;
 
+  std::vector<double> lastPos { 0.0, 0.0, 0.0 };
+
   frc::XboxController Xbox { OperatorConstants::kDriverControllerPort };
   double xboxLX = 0;
   double xboxLY = 0;

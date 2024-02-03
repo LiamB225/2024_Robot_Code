@@ -18,6 +18,6 @@ std::vector<double> ATPS::PositionSpeaker()
 std::vector<double> ATPS::PositionStage()
 {
     std::vector<double> pos(6);
-    pos = ntinst.GetTable("limelight")->GetNumberArray("botpose_targetspace", std::vector<double>(6));
-    return std::vector<double> { pos[0], pos[1], pos[5] };
+    pos = ntinst.GetTable("limelight")->GetNumberArray("targetpose_robotspace", std::vector<double>(6));
+    return std::vector<double> { pos[0], pos[2], pos[4] };
 }

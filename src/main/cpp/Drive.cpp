@@ -26,11 +26,9 @@ void Drive::Track(std::vector<double> currentPos)
     double X = pidX.Calculate((units::meter_t)(currentPos[0]));
     double Y = pidY.Calculate((units::meter_t)(currentPos[1]));
     double Rot = pidRot.Calculate((units::degree_t)(currentPos[2]));
-    double newX = X * units::math::cos((units::degree_t)(currentPos[2])) - Y * units::math::sin((units::degree_t)(currentPos[2]));
-    double newY = X * units::math::sin((units::degree_t)(currentPos[2])) + Y * units::math::cos((units::degree_t)(currentPos[2]));
     //myMecanumDrive->DriveCartesian(newY, newX, Rot);
-    frc::SmartDashboard::PutNumber("ValueX", newX);
-    frc::SmartDashboard::PutNumber("ValueY", newY);
+    frc::SmartDashboard::PutNumber("ValueX", X);
+    frc::SmartDashboard::PutNumber("ValueY", Y);
     frc::SmartDashboard::PutNumber("ValueRot", Rot);
 }
 
