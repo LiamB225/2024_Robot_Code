@@ -14,6 +14,7 @@ void Robot::RobotInit()
 
   m_Drive = new Drive();
   m_ATPS = new ATPS();
+  m_Shooter = new Shooter();
 }
 
 void Robot::RobotPeriodic()
@@ -27,7 +28,10 @@ void Robot::DisabledPeriodic() {}
 
 void Robot::AutonomousInit() {}
 
-void Robot::AutonomousPeriodic() {}
+void Robot::AutonomousPeriodic()
+{
+  
+}
 
 void Robot::TeleopInit()
 {
@@ -37,17 +41,48 @@ void Robot::TeleopInit()
 void Robot::TeleopPeriodic()
 {
   GetXbox();
-  std::vector<double> newPos;
-  newPos = m_ATPS->PositionStage();
-  if(newPos[0] == 0.0 && newPos[1] == 0.0 && newPos[2] == 0.0)
+  //std::vector<double> newPos;
+  //newPos = m_ATPS->PositionStage();
+  //if(newPos[0] == 0.0 && newPos[1] == 0.0 && newPos[2] == 0.0)
+  //{
+  //  newPos = lastPos;
+  //}
+  //else
+  //{
+  //  lastPos = newPos;
+  //}
+  //m_Drive->Track(newPos);
+
+  //if(xboxRightBumper)
+  //{
+  //  StageDrive();
+  //}
+  //else
+  //{
+      NormalDrive();
+  //}
+
+  if(xboxY)
   {
-    newPos = lastPos;
+    m_Shooter->Shoot();
   }
   else
   {
-    lastPos = newPos;
+    m_Shooter->StopShooting();
   }
-  m_Drive->Track(newPos);
+
+  if(xboxRightTrigger)
+  {
+    m_Shooter->IntakeIn();
+  }
+  else if(xboxLeftTrigger)
+  {
+    m_Shooter->IntakeOut();
+  }
+  else
+  {
+    m_Shooter->StopIntake();
+  }
 }
 
 void Robot::TestPeriodic() {}
@@ -75,8 +110,43 @@ void Robot::GetXbox()
   {
     xboxRX = 0;
   }
+  
+  if(Xbox.GetRightTriggerAxis() > .1)
+  {
+    xboxRightTrigger = true;
+    xboxLeftTrigger = false;
+  }
+  else if(Xbox.GetLeftTriggerAxis() > .1)
+  {
+    xboxLeftTrigger = true;
+    xboxRightTrigger = false;
+  }
+  else
+  {
+    xboxRightTrigger = false;
+    xboxLeftTrigger = false;
+  }
 
-  xboxRightBumper = Xbox.GetRightBumper();
+  if(Xbox.GetYButtonPressed())
+  {
+    xboxY =! xboxY;
+  }
+
+  if(Xbox.GetRightBumperPressed())
+  {
+    xboxRightBumper =! xboxRightBumper;
+  }
+
+}
+
+void Robot::NormalDrive()
+{
+  m_Drive->Cartesian(-xboxLY, xboxLX, xboxRX);
+}
+
+void Robot::StageDrive()
+{
+
 }
 
 #ifndef RUNNING_FRC_TESTS

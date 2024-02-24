@@ -14,6 +14,7 @@
 #include "Drive.h"
 #include "Constants.h"
 #include "ATPS.h"
+#include "Shooter.h"
 
 class Robot : public frc::TimedRobot {
  public:
@@ -32,6 +33,7 @@ class Robot : public frc::TimedRobot {
  private:
   Drive *m_Drive;
   ATPS *m_ATPS;
+  Shooter *m_Shooter;
 
   std::vector<double> lastPos { 0.0, 0.0, 0.0 };
 
@@ -39,7 +41,13 @@ class Robot : public frc::TimedRobot {
   double xboxLX = 0;
   double xboxLY = 0;
   double xboxRX = 0;
+  bool xboxRightTrigger = false;
+  bool xboxLeftTrigger = false;
+  bool xboxY = false;
   bool xboxRightBumper = false;
 
   void GetXbox();
+  void NormalDrive();
+  void SpeakerDrive();
+  void StageDrive();
 };

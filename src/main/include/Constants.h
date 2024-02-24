@@ -21,5 +21,9 @@ const int frontLeftID = 1;
 const int frontRightID = 2;
 const int backLeftID = 3;
 const int backRightID = 4;
+const int leftShooterID = 5;
+const int rightShooterID = 6;
+const int topIntakeID = 7;
+const int bottomIntakeID = 8;
 
 }  // namespace OperatorConstants

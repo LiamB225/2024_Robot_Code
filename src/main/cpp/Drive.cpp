@@ -7,6 +7,9 @@
 Drive::Drive()
 {
     myMecanumDrive = new frc::MecanumDrive(frontLeftMotor, backLeftMotor, frontRightMotor, backRightMotor);
+
+    frontRightMotor.SetInverted(true);
+    backRightMotor.SetInverted(true);
 }
 
 void Drive::Cartesian(double drivePower, double strafePower, double turnPower)
