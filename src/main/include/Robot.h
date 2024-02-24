@@ -8,8 +8,12 @@
 
 #include <frc/TimedRobot.h>
 #include <frc2/command/CommandPtr.h>
+#include <frc/XboxController.h>
+#include <vector>
 
-#include "RobotContainer.h"
+#include "Drive.h"
+#include "Constants.h"
+#include "ATPS.h"
 
 class Robot : public frc::TimedRobot {
  public:
@@ -26,9 +30,16 @@ class Robot : public frc::TimedRobot {
   void SimulationPeriodic() override;
 
  private:
-  // Have it empty by default so that if testing teleop it
-  // doesn't have undefined behavior and potentially crash.
-  std::optional<frc2::CommandPtr> m_autonomousCommand;
+  Drive *m_Drive;
+  ATPS *m_ATPS;
 
-  RobotContainer m_container;
+  std::vector<double> lastPos { 0.0, 0.0, 0.0 };
+
+  frc::XboxController Xbox { OperatorConstants::kDriverControllerPort };
+  double xboxLX = 0;
+  double xboxLY = 0;
+  double xboxRX = 0;
+  bool xboxRightBumper = false;
+
+  void GetXbox();
 };

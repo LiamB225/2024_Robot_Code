@@ -1,80 +1,87 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+
 
 #include "Robot.h"
 
 #include <frc2/command/CommandScheduler.h>
+#include <wpinet/PortForwarder.h>
 
-void Robot::RobotInit() {}
+void Robot::RobotInit()
+{
+  for (int port = 5800; port <= 5805; port++)
+  {
+    wpi::PortForwarder::GetInstance().Add(port, "limelight.local", port);
+  }
 
-/**
- * This function is called every 20 ms, no matter the mode. Use
- * this for items like diagnostics that you want to run during disabled,
- * autonomous, teleoperated and test.
- *
- * <p> This runs after the mode specific periodic functions, but before
- * LiveWindow and SmartDashboard integrated updating.
- */
-void Robot::RobotPeriodic() {
-  frc2::CommandScheduler::GetInstance().Run();
+  m_Drive = new Drive();
+  m_ATPS = new ATPS();
 }
 
-/**
- * This function is called once each time the robot enters Disabled mode. You
- * can use it to reset any subsystem information you want to clear when the
- * robot is disabled.
- */
+void Robot::RobotPeriodic()
+{
+  //frc2::CommandScheduler::GetInstance().Run();
+}
+
 void Robot::DisabledInit() {}
 
 void Robot::DisabledPeriodic() {}
 
-/**
- * This autonomous runs the autonomous command selected by your {@link
- * RobotContainer} class.
- */
-void Robot::AutonomousInit() {
-  m_autonomousCommand = m_container.GetAutonomousCommand();
-
-  if (m_autonomousCommand) {
-    m_autonomousCommand->Schedule();
-  }
-}
+void Robot::AutonomousInit() {}
 
 void Robot::AutonomousPeriodic() {}
 
-void Robot::TeleopInit() {
-  // This makes sure that the autonomous stops running when
-  // teleop starts running. If you want the autonomous to
-  // continue until interrupted by another command, remove
-  // this line or comment it out.
-  if (m_autonomousCommand) {
-    m_autonomousCommand->Cancel();
-  }
+void Robot::TeleopInit()
+{
+  m_Drive->SetTarget(0.0, -1.0, 0.0);
 }
 
-/**
- * This function is called periodically during operator control.
- */
-void Robot::TeleopPeriodic() {}
+void Robot::TeleopPeriodic()
+{
+  GetXbox();
+  std::vector<double> newPos;
+  newPos = m_ATPS->PositionStage();
+  if(newPos[0] == 0.0 && newPos[1] == 0.0 && newPos[2] == 0.0)
+  {
+    newPos = lastPos;
+  }
+  else
+  {
+    lastPos = newPos;
+  }
+  m_Drive->Track(newPos);
+}
 
-/**
- * This function is called periodically during test mode.
- */
 void Robot::TestPeriodic() {}
 
-/**
- * This function is called once when the robot is first started up.
- */
 void Robot::SimulationInit() {}
 
-/**
- * This function is called periodically whilst in simulation.
- */
 void Robot::SimulationPeriodic() {}
 
+void Robot::GetXbox()
+{
+  xboxLX = Xbox.GetLeftX();
+  if(xboxLX < .2 && xboxLX > -.2)
+  {
+    xboxLX = 0;
+  }
+
+  xboxLY = Xbox.GetLeftY();
+  if(xboxLY < .2 && xboxLY > -.2)
+  {
+    xboxLY = 0;
+  }
+
+  xboxRX = Xbox.GetRightX();
+  if(xboxRX < .2 && xboxRX > -.2)
+  {
+    xboxRX = 0;
+  }
+
+  xboxRightBumper = Xbox.GetRightBumper();
+}
+
 #ifndef RUNNING_FRC_TESTS
-int main() {
+int main()
+{
   return frc::StartRobot<Robot>();
 }
 #endif
