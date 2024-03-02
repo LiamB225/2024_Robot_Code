@@ -41,3 +41,8 @@ void Shooter::StopIntake()
     topIntakeMotor.StopMotor();
     bottomIntakeMotor.StopMotor();
 }
+
+void Shooter::GetIntakeSensor()
+{
+    frc::SmartDashboard::PutBoolean("Intake Sensor", intakeSensor.Get());
+}

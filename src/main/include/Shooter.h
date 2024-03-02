@@ -6,6 +6,7 @@
 
 #include <rev/CANSparkMax.h>
 #include <frc/smartdashboard/SmartDashboard.h>
+#include <frc/DigitalInput.h>
 
 #include "Constants.h"
 
@@ -18,6 +19,7 @@ class Shooter {
   void IntakeIn();
   void IntakeOut();
   void StopIntake();
+  void GetIntakeSensor();
 
   rev::CANSparkMax leftShooterMotor {OperatorConstants::leftShooterID, rev::CANSparkMax::MotorType::kBrushless};
   rev::SparkRelativeEncoder leftShooterEncoder = leftShooterMotor.GetEncoder();
@@ -25,4 +27,5 @@ class Shooter {
   rev::SparkRelativeEncoder rightShooterEncoder = rightShooterMotor.GetEncoder();
   rev::CANSparkMax topIntakeMotor {OperatorConstants::topIntakeID, rev::CANSparkMax::MotorType::kBrushed};
   rev::CANSparkMax bottomIntakeMotor {OperatorConstants::bottomIntakeID, rev::CANSparkMax::MotorType::kBrushed};
+  frc::DigitalInput intakeSensor {OperatorConstants::intakeSensorID};
 };

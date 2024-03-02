@@ -83,6 +83,8 @@ void Robot::TeleopPeriodic()
   {
     m_Shooter->StopIntake();
   }
+
+  m_Shooter->GetIntakeSensor();
 }
 
 void Robot::TestPeriodic() {}
