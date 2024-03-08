@@ -62,6 +62,7 @@ void Robot::TeleopPeriodic()
       NormalDrive();
   //}
 
+  //Flywheels
   if(xboxY)
   {
     m_Shooter->Shoot();
@@ -71,9 +72,21 @@ void Robot::TeleopPeriodic()
     m_Shooter->StopShooting();
   }
 
-  if(xboxRightTrigger)
+  //Intake
+  if(m_Shooter->GetIntakeSensor())
   {
-    m_Shooter->IntakeIn();
+    if(xboxRightTrigger)
+    {
+      m_Shooter->IntakeIn();
+    }
+    else if(xboxLeftTrigger)
+    {
+      m_Shooter->IntakeOut();
+    }
+    else
+    {
+      m_Shooter->StopIntake();
+    }
   }
   else if(xboxLeftTrigger)
   {
@@ -84,7 +97,29 @@ void Robot::TeleopPeriodic()
     m_Shooter->StopIntake();
   }
 
-  m_Shooter->GetIntakeSensor();
+  //Elevator
+  if(xboxRightBumper)
+  {
+    m_Shooter->AngleUp();
+  }
+  else if(xboxLeftBumper)
+  {
+    m_Shooter->AngleDown();
+  }
+  else
+  {
+    m_Shooter->StopElevator();
+  }
+
+  if(xboxB)
+  {
+    if(m_Shooter->ZeroElevator())
+    {
+      xboxB = false;
+    }
+  }
+  
+  m_Shooter->GetPosition();
 }
 
 void Robot::TestPeriodic() {}
@@ -95,24 +130,24 @@ void Robot::SimulationPeriodic() {}
 
 void Robot::GetXbox()
 {
+  //Drive Train Controls
   xboxLX = Xbox.GetLeftX();
   if(xboxLX < .2 && xboxLX > -.2)
   {
     xboxLX = 0;
   }
-
   xboxLY = Xbox.GetLeftY();
   if(xboxLY < .2 && xboxLY > -.2)
   {
     xboxLY = 0;
   }
-
   xboxRX = Xbox.GetRightX();
   if(xboxRX < .2 && xboxRX > -.2)
   {
     xboxRX = 0;
   }
   
+  //Intake Controls
   if(Xbox.GetRightTriggerAxis() > .1)
   {
     xboxRightTrigger = true;
@@ -129,16 +164,20 @@ void Robot::GetXbox()
     xboxLeftTrigger = false;
   }
 
+  //Shooting Control
   if(Xbox.GetYButtonPressed())
   {
     xboxY =! xboxY;
   }
 
-  if(Xbox.GetRightBumperPressed())
+  //Elevator Control
+  xboxRightBumper = Xbox.GetRightBumper();
+  xboxLeftBumper = Xbox.GetLeftBumper();
+  if(Xbox.GetBButtonPressed())
   {
-    xboxRightBumper =! xboxRightBumper;
+    xboxB =! xboxB;
   }
-
+  frc::SmartDashboard::PutNumber("B", xboxB);
 }
 
 void Robot::NormalDrive()

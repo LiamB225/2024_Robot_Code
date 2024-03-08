@@ -31,12 +31,13 @@ class Robot : public frc::TimedRobot {
   void SimulationPeriodic() override;
 
  private:
+  //Pointers
   Drive *m_Drive;
   ATPS *m_ATPS;
   Shooter *m_Shooter;
 
-  std::vector<double> lastPos { 0.0, 0.0, 0.0 };
-
+  //Xbox Controller
+  void GetXbox();
   frc::XboxController Xbox { OperatorConstants::kDriverControllerPort };
   double xboxLX = 0;
   double xboxLY = 0;
@@ -45,9 +46,12 @@ class Robot : public frc::TimedRobot {
   bool xboxLeftTrigger = false;
   bool xboxY = false;
   bool xboxRightBumper = false;
+  bool xboxLeftBumper = false;
+  bool xboxB = false;
 
-  void GetXbox();
+  //Drive Train
   void NormalDrive();
   void SpeakerDrive();
   void StageDrive();
+  std::vector<double> lastPos { 0.0, 0.0, 0.0 };
 };
