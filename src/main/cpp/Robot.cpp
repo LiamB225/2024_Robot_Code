@@ -71,15 +71,21 @@ void Robot::TeleopPeriodic()
   }
   else
   {
-    m_Shooter->StopShooting();
-  }
-
-  //Intake
-  if(m_Shooter->GetIntakeSensor())
-  {
-    if(xboxRightTrigger)
+    //Intake
+    if(m_Shooter->GetIntakeSensor())
     {
-      m_Shooter->IntakeIn();
+      if(xboxRightTrigger)
+      {
+        m_Shooter->IntakeIn();
+      }
+      else if(xboxLeftTrigger)
+      {
+        m_Shooter->IntakeOut();
+      }
+      else
+      {
+        m_Shooter->StopIntake();
+      }
     }
     else if(xboxLeftTrigger)
     {
@@ -89,16 +95,9 @@ void Robot::TeleopPeriodic()
     {
       m_Shooter->StopIntake();
     }
+    m_Shooter->StopShooting();
   }
-  else if(xboxLeftTrigger)
-  {
-    m_Shooter->IntakeOut();
-  }
-  else
-  {
-    m_Shooter->StopIntake();
-  }
-
+  
   //Elevator
   if(xboxRightBumper)
   {

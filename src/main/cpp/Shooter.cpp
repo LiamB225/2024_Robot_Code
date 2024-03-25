@@ -19,7 +19,6 @@ Shooter::Shooter()
 //Flywheels
 void Shooter::Shoot()
 {
-    timer.Reset();
     leftShooterMotor.Set(1.0);
     rightShooterMotor.Set(1.0);
     frc::SmartDashboard::PutNumber("Left Velocity", leftShooterEncoder.GetVelocity());
@@ -51,6 +50,7 @@ void Shooter::IntakeOut()
 
 void Shooter::StopIntake()
 {
+    timer.Reset();
     topIntakeMotor.StopMotor();
     bottomIntakeMotor.StopMotor();
 }
