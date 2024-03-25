@@ -16,6 +16,5 @@ class ATPS {
 
   nt::NetworkTableInstance ntinst;
 
-  std::vector<double> PositionStage();
   std::vector<double> PositionSpeaker();
 };

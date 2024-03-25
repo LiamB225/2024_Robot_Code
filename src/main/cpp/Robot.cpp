@@ -30,7 +30,9 @@ void Robot::AutonomousInit() {}
 
 void Robot::AutonomousPeriodic()
 {
-  
+  m_Drive->SetTarget(0.0, 0.0, 0.0);
+  m_Drive->Track(m_ATPS->PositionSpeaker());
+  m_Drive->SetVoltages();
 }
 
 void Robot::TeleopInit()
