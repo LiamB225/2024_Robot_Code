@@ -82,5 +82,4 @@ class Drive {
   frc::Translation2d backLeftLocation { -0.1778_m, 0.2873375_m };
   frc::Translation2d backRightLocation { -0.1778_m, -0.2873375_m };
   frc::MecanumDriveKinematics m_kinematics { frontLeftLocation, frontRightLocation, backLeftLocation, backRightLocation };
-  frc::ChassisSpeeds m_speeds;
 };

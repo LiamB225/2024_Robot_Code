@@ -19,6 +19,7 @@ class Shooter {
   //Flywheels
   void Shoot();
   void StopShooting();
+  bool runOnceFlywheels = true;
   rev::CANSparkMax leftShooterMotor {OperatorConstants::leftShooterID, rev::CANSparkMax::MotorType::kBrushless};
   rev::SparkRelativeEncoder leftShooterEncoder = leftShooterMotor.GetEncoder();
   rev::CANSparkMax rightShooterMotor {OperatorConstants::rightShooterID, rev::CANSparkMax::MotorType::kBrushless};
@@ -30,6 +31,7 @@ class Shooter {
   void IntakeOut();
   void StopIntake();
   bool GetIntakeSensor();
+  bool runOnceIntake = true;
   rev::CANSparkMax topIntakeMotor {OperatorConstants::topIntakeID, rev::CANSparkMax::MotorType::kBrushed};
   rev::CANSparkMax bottomIntakeMotor {OperatorConstants::bottomIntakeID, rev::CANSparkMax::MotorType::kBrushed};
   frc::DigitalInput intakeSensor {OperatorConstants::intakeSensorID};
@@ -40,7 +42,9 @@ class Shooter {
   void StopElevator();
   bool ZeroElevator();
   void GetPosition();
-  bool runonce = true;
+  bool runOnceElevator = true;
+  bool runOnceZero = true;
+
   rev::CANSparkMax elevatorMotor {OperatorConstants::elevatorID, rev::CANSparkMax::MotorType::kBrushless};
   rev::SparkRelativeEncoder elevatorEncoder = elevatorMotor.GetEncoder();
   frc::DigitalInput elevatorLimit {OperatorConstants::limitSwitchID};

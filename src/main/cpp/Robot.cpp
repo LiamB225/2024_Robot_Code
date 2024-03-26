@@ -42,27 +42,11 @@ void Robot::TeleopInit()
 
 void Robot::TeleopPeriodic()
 {
+  //Get Xbox Inputs
   GetXbox();
-  //std::vector<double> newPos;
-  //newPos = m_ATPS->PositionStage();
-  //if(newPos[0] == 0.0 && newPos[1] == 0.0 && newPos[2] == 0.0)
-  //{
-  //  newPos = lastPos;
-  //}
-  //else
-  //{
-  //  lastPos = newPos;
-  //}
-  //m_Drive->Track(newPos);
 
-  //if(xboxRightBumper)
-  //{
-  //  StageDrive();
-  //}
-  //else
-  //{
-      NormalDrive();
-  //}
+  //MecanumDrive
+  NormalDrive();
 
   //Flywheels
   if(xboxY)

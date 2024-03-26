@@ -19,8 +19,12 @@ Shooter::Shooter()
 //Flywheels
 void Shooter::Shoot()
 {
-    leftShooterMotor.Set(1.0);
-    rightShooterMotor.Set(1.0);
+    if(runOnceFlywheels)
+    {
+        leftShooterMotor.Set(1.0);
+        rightShooterMotor.Set(1.0);
+        runOnceFlywheels = false;
+    }
     frc::SmartDashboard::PutNumber("Left Velocity", leftShooterEncoder.GetVelocity());
     frc::SmartDashboard::PutNumber("Right Velocity", rightShooterEncoder.GetVelocity());
     if(timer.Get() > 2_s)
@@ -33,19 +37,28 @@ void Shooter::StopShooting()
 {
     leftShooterMotor.StopMotor();
     rightShooterMotor.StopMotor();
+    runOnceFlywheels = true;
 }
 
 //Intake
 void Shooter::IntakeIn()
 {
-    topIntakeMotor.Set(1.0);
-    bottomIntakeMotor.Set(1.0);
+    if(runOnceIntake)
+    {
+        topIntakeMotor.Set(1.0);
+        bottomIntakeMotor.Set(1.0);
+        runOnceIntake = false;
+    }
 }
 
 void Shooter::IntakeOut()
 {
-    topIntakeMotor.Set(-1.0);
-    bottomIntakeMotor.Set(-1.0);
+    if(runOnceIntake)
+    {
+        topIntakeMotor.Set(-1.0);
+        bottomIntakeMotor.Set(-1.0);
+        runOnceIntake = false;
+    }
 }
 
 void Shooter::StopIntake()
@@ -53,6 +66,7 @@ void Shooter::StopIntake()
     timer.Reset();
     topIntakeMotor.StopMotor();
     bottomIntakeMotor.StopMotor();
+    runOnceIntake = true;
 }
 
 bool Shooter::GetIntakeSensor()
@@ -63,17 +77,26 @@ bool Shooter::GetIntakeSensor()
 //Elevator Manual Control
 void Shooter::AngleUp()
 {
-    elevatorMotor.Set(1.0);
+    if(runOnceElevator)
+    {
+        elevatorMotor.Set(1.0);
+        runOnceElevator = false;
+    }
 }
 
 void Shooter::AngleDown()
 {
-    elevatorMotor.Set(-1.0);
+    if(runOnceElevator)
+    {
+        elevatorMotor.Set(-1.0);
+        runOnceElevator = false;
+    }
 }
 
 void Shooter::StopElevator()
 {
     elevatorMotor.StopMotor();
+    runOnceElevator = true;
 }
 
 bool Shooter::ZeroElevator()
@@ -84,17 +107,17 @@ bool Shooter::ZeroElevator()
         elevatorMotor.EnableSoftLimit(rev::CANSparkMax::SoftLimitDirection::kReverse, true);
         StopElevator();
         elevatorEncoder.SetPosition(0.0);
-        runonce = true;
+        runOnceZero = true;
         return true;
     }
     else
     {
-        if(runonce)
+        if(runOnceZero)
         {
             elevatorMotor.EnableSoftLimit(rev::CANSparkMax::SoftLimitDirection::kReverse, false);
-            runonce = false;
+            runOnceZero = false;
+            elevatorMotor.Set(-1.0);
         }
-        elevatorMotor.Set(-1.0);
         return false;
     }
 }

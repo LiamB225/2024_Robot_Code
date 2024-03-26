@@ -53,5 +53,4 @@ class Robot : public frc::TimedRobot {
   void NormalDrive();
   void SpeakerDrive();
   void StageDrive();
-  std::vector<double> lastPos { 0.0, 0.0, 0.0 };
 };

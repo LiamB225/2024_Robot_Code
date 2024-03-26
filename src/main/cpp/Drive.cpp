@@ -42,26 +42,33 @@ void Drive::SetTarget(double targetXPos, double targetYPos, double targetRotPos)
 
 void Drive::Track(std::vector<double> currentPos)
 {
+    units::meters_per_second_t currentflvel = (units::meters_per_second_t)(frontLeftEncoder.GetVelocity());
+    units::meters_per_second_t currentfrvel = (units::meters_per_second_t)(frontRightEncoder.GetVelocity());
+    units::meters_per_second_t currentblvel = (units::meters_per_second_t)(backLeftEncoder.GetVelocity());
+    units::meters_per_second_t currentbrvel = (units::meters_per_second_t)(backRightEncoder.GetVelocity());
+    frc::MecanumDriveWheelSpeeds wheelSpeeds { currentflvel, currentfrvel, currentblvel, currentbrvel };
+    auto [forward, sideways, angular] = m_kinematics.ToChassisSpeeds(wheelSpeeds);
+
     auto velocityX = XProfile->Calculate(
         ProfileTimer.Get(),
-        frc::TrapezoidProfile<units::meters>::State { (units::meter_t)(currentPos[0]), 0.0_mps},
+        frc::TrapezoidProfile<units::meters>::State { (units::meter_t)(currentPos[0]), forward},
         frc::TrapezoidProfile<units::meters>::State { setpointX, 0.0_mps}
     );
 
     auto velocityY = YProfile->Calculate(
         ProfileTimer.Get(),
-        frc::TrapezoidProfile<units::meters>::State { (units::meter_t)(currentPos[1]), 0.0_mps},
+        frc::TrapezoidProfile<units::meters>::State { (units::meter_t)(currentPos[1]), sideways},
         frc::TrapezoidProfile<units::meters>::State { setpointY, 0.0_mps}
     );
 
     auto velocityRot = RotProfile->Calculate(
         ProfileTimer.Get(),
-        frc::TrapezoidProfile<units::degrees>::State { (units::meter_t)(currentPos[2]), 0.0_deg_per_s},
+        frc::TrapezoidProfile<units::degrees>::State { (units::meter_t)(currentPos[2]), (units::degrees_per_second_t)(angular * 57.2958)},
         frc::TrapezoidProfile<units::degrees>::State { setpointRot, 0.0_deg_per_s}
     );
 
-    m_speeds.Discretize(velocityX.velocity, velocityY.velocity, velocityRot.velocity * 0.0174533, 0.02_s);
-    auto [fl, fr, bl, br] = m_kinematics.ToWheelSpeeds(m_speeds);
+    frc::ChassisSpeeds chassisSpeeds {velocityX.velocity, velocityY.velocity, velocityRot.velocity * 0.0174533};
+    auto [fl, fr, bl, br] = m_kinematics.ToWheelSpeeds(chassisSpeeds);
     frontLeftVelocity = fl;
     frontRightVelocity = fr;
     backLeftVelocity = bl;
