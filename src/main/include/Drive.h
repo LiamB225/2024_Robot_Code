@@ -67,7 +67,8 @@ class Drive {
   void Cartesian(double drivePower, double strafePower, double turnPower);
   void SetTarget(double targetXPos, double targetYPos, double targetRotPos);
   void ResetPosition(std::vector<double> currentPos);
-  void Track(std::vector<double> currentPos);
+  void EstimatePosition(std::vector<double> currentPos);
+  void Track();
   void SetVoltages();
 
   rev::CANSparkMax frontLeftMotor {OperatorConstants::frontLeftID, rev::CANSparkMax::MotorType::kBrushless};
@@ -87,6 +88,7 @@ class Drive {
   frc::MecanumDriveKinematics m_kinematics { frontLeftLocation, frontRightLocation, backLeftLocation, backRightLocation };
   frc::ADIS16470_IMU gyro;
   frc::MecanumDriveWheelPositions notWheelPositions { 0.0_m, 0.0_m, 0.0_m, 0.0_m};
-    frc::Pose2d notPosition;
-    frc::MecanumDrivePoseEstimator m_poseEstimator { m_kinematics, gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), notWheelPositions, notPosition};
+  frc::Pose2d notPosition;
+  frc::MecanumDrivePoseEstimator m_poseEstimator { m_kinematics, gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), notWheelPositions, notPosition};
+  frc::MecanumDriveWheelPositions m_wheelPositions;
 };

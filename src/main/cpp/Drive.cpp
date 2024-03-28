@@ -56,20 +56,14 @@ void Drive::ResetPosition(std::vector<double> currentPos)
     m_poseEstimator.ResetPosition(gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), wheelPositions, m_visionPosition);
 }
 
-void Drive::Track(std::vector<double> currentPos)
+void Drive::EstimatePosition(std::vector<double> currentPos)
 {
-    units::meters_per_second_t currentflvel = (units::meters_per_second_t)(frontLeftEncoder.GetVelocity());
-    units::meters_per_second_t currentfrvel = (units::meters_per_second_t)(frontRightEncoder.GetVelocity());
-    units::meters_per_second_t currentblvel = (units::meters_per_second_t)(backLeftEncoder.GetVelocity());
-    units::meters_per_second_t currentbrvel = (units::meters_per_second_t)(backRightEncoder.GetVelocity());
-    frc::MecanumDriveWheelSpeeds wheelSpeeds { currentflvel, currentfrvel, currentblvel, currentbrvel };
-    auto [forward, sideways, angular] = m_kinematics.ToChassisSpeeds(wheelSpeeds);
-
     units::meter_t currentflpos = (units::meter_t)(frontLeftEncoder.GetPosition());
     units::meter_t currentfrpos = (units::meter_t)(frontRightEncoder.GetPosition());
     units::meter_t currentblpos = (units::meter_t)(backLeftEncoder.GetPosition());
     units::meter_t currentbrpos = (units::meter_t)(backRightEncoder.GetPosition());
     frc::MecanumDriveWheelPositions wheelPositions { currentflpos, currentfrpos, currentblpos, currentbrpos };
+    m_wheelPositions = wheelPositions;
 
     frc::Rotation2d m_rotation { (units::degree_t)(currentPos[2]) };
     frc::Pose2d m_visionPosition { (units::meter_t)(currentPos[0]), (units::meter_t)(currentPos[1]), m_rotation };
@@ -79,7 +73,19 @@ void Drive::Track(std::vector<double> currentPos)
         m_poseEstimator.AddVisionMeasurement(m_visionPosition, ProfileTimer.Get());
     }
 
-    frc::Pose2d robotPos = m_poseEstimator.UpdateWithTime(ProfileTimer.Get(), gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), wheelPositions);
+    frc::Pose2d robotPos = m_poseEstimator.GetEstimatedPosition();
+}
+
+void Drive::Track()
+{
+    units::meters_per_second_t currentflvel = (units::meters_per_second_t)(frontLeftEncoder.GetVelocity());
+    units::meters_per_second_t currentfrvel = (units::meters_per_second_t)(frontRightEncoder.GetVelocity());
+    units::meters_per_second_t currentblvel = (units::meters_per_second_t)(backLeftEncoder.GetVelocity());
+    units::meters_per_second_t currentbrvel = (units::meters_per_second_t)(backRightEncoder.GetVelocity());
+    frc::MecanumDriveWheelSpeeds wheelSpeeds { currentflvel, currentfrvel, currentblvel, currentbrvel };
+    auto [forward, sideways, angular] = m_kinematics.ToChassisSpeeds(wheelSpeeds);
+
+    frc::Pose2d robotPos = m_poseEstimator.UpdateWithTime(ProfileTimer.Get(), gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), m_wheelPositions);
 
     auto velocityX = XProfile->Calculate(
         0.0_s,
@@ -102,7 +108,7 @@ void Drive::Track(std::vector<double> currentPos)
     double newX = velocityX.velocity.value() * cos(robotPos.Rotation().Degrees().value()) + velocityY.velocity.value() * sin(robotPos.Rotation().Degrees().value());
     double newY = velocityX.velocity.value() * sin(robotPos.Rotation().Degrees().value()) - velocityY.velocity.value() * cos(robotPos.Rotation().Degrees().value());
 
-    frc::ChassisSpeeds chassisSpeeds {velocityX.velocity, velocityY.velocity, velocityRot.velocity * 0.0174533};
+    frc::ChassisSpeeds chassisSpeeds {(units::meter_t)(newX), (units::meter_t)(newY), velocityRot.velocity * 0.0174533};
     auto [fl, fr, bl, br] = m_kinematics.ToWheelSpeeds(chassisSpeeds);
     frontLeftVelocity = fl;
     frontRightVelocity = fr;

@@ -19,6 +19,7 @@ void Robot::RobotInit()
 
 void Robot::RobotPeriodic()
 {
+  m_Drive->EstimatePosition(m_ATPS->PositionSpeaker());
   //frc2::CommandScheduler::GetInstance().Run();
 }
 
@@ -39,7 +40,7 @@ void Robot::AutonomousInit()
 
 void Robot::AutonomousPeriodic()
 {
-  m_Drive->Track(m_ATPS->PositionSpeaker());
+  m_Drive->Track();
   m_Drive->SetVoltages();
 }
 
