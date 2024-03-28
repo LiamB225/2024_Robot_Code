@@ -26,11 +26,13 @@ void Robot::DisabledInit() {}
 
 void Robot::DisabledPeriodic() {}
 
-void Robot::AutonomousInit() {}
+void Robot::AutonomousInit()
+{
+  m_Drive->SetTarget(5.8, 1.44, 179);
+}
 
 void Robot::AutonomousPeriodic()
 {
-  m_Drive->SetTarget(0.0, 0.0, 0.0);
   m_Drive->Track(m_ATPS->PositionSpeaker());
   m_Drive->SetVoltages();
 }
@@ -91,7 +93,7 @@ void Robot::TeleopPeriodic()
   {
     m_Shooter->AngleDown();
   }
-  else
+  else if(!xboxB)
   {
     m_Shooter->StopElevator();
   }
@@ -105,6 +107,7 @@ void Robot::TeleopPeriodic()
   }
   
   m_Shooter->GetPosition();
+  m_ATPS->PositionSpeaker();
 }
 
 void Robot::TestPeriodic() {}

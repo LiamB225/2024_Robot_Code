@@ -6,6 +6,7 @@
 
 #include <frc/Drive/MecanumDrive.h>
 #include <frc/kinematics/MecanumDriveKinematics.h>
+#include <frc/estimator/MecanumDrivePoseEstimator.h>
 #include <rev/CANSparkMax.h>
 #include <vector>
 #include <units/length.h>
@@ -20,6 +21,7 @@
 #include <frc/trajectory/TrapezoidProfile.h>
 #include <frc/controller/SimpleMotorFeedforward.h>
 #include <frc/smartdashboard/SmartDashboard.h>
+#include <frc/ADIS16470_IMU.h>
 #include <frc/Timer.h>
 #include "Constants.h"
 
@@ -28,15 +30,15 @@ class Drive {
   Drive();
 
   frc::TrapezoidProfile<units::meters> *XProfile;
-  frc::TrapezoidProfile<units::meters>::Constraints constraintsX{ 1_mps, 1_mps_sq };
+  frc::TrapezoidProfile<units::meters>::Constraints constraintsX{ 0.5_mps, 0.5_mps_sq };
   units::meter_t setpointX;
 
   frc::TrapezoidProfile<units::meters> *YProfile;
-  frc::TrapezoidProfile<units::meters>::Constraints constraintsY{ 1_mps, 1_mps_sq };
+  frc::TrapezoidProfile<units::meters>::Constraints constraintsY{ 0.5_mps, 0.5_mps_sq };
   units::meter_t setpointY;
 
   frc::TrapezoidProfile<units::degrees> *RotProfile;
-  frc::TrapezoidProfile<units::degrees>::Constraints constraintsRot{ 20_deg_per_s, 10_deg_per_s / 1_s };
+  frc::TrapezoidProfile<units::degrees>::Constraints constraintsRot{ 20_deg_per_s, 20_deg_per_s / 1_s };
   units::degree_t setpointRot;
 
   frc::Timer ProfileTimer;
@@ -82,4 +84,8 @@ class Drive {
   frc::Translation2d backLeftLocation { -0.1778_m, 0.2873375_m };
   frc::Translation2d backRightLocation { -0.1778_m, -0.2873375_m };
   frc::MecanumDriveKinematics m_kinematics { frontLeftLocation, frontRightLocation, backLeftLocation, backRightLocation };
+  frc::ADIS16470_IMU gyro;
+  frc::MecanumDriveWheelPositions notWheelPositions { 0.0_m, 0.0_m, 0.0_m, 0.0_m};
+    frc::Pose2d notPosition;
+    frc::MecanumDrivePoseEstimator m_poseEstimator { m_kinematics, gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), notWheelPositions, notPosition};
 };

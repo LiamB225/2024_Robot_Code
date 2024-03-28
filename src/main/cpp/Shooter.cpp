@@ -102,7 +102,7 @@ void Shooter::StopElevator()
 bool Shooter::ZeroElevator()
 {
     
-    if(!elevatorLimit.Get())
+    if(elevatorLimit.Get())
     {
         elevatorMotor.EnableSoftLimit(rev::CANSparkMax::SoftLimitDirection::kReverse, true);
         StopElevator();
@@ -115,8 +115,8 @@ bool Shooter::ZeroElevator()
         if(runOnceZero)
         {
             elevatorMotor.EnableSoftLimit(rev::CANSparkMax::SoftLimitDirection::kReverse, false);
-            runOnceZero = false;
             elevatorMotor.Set(-1.0);
+            runOnceZero = false;
         }
         return false;
     }

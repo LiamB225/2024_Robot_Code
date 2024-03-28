@@ -14,5 +14,8 @@ std::vector<double> ATPS::PositionSpeaker()
 {
     std::vector<double> pos(6);
     pos = ntinst.GetTable("limelight")->GetNumberArray("botpose", std::vector<double>(6));
-    return std::vector<double> { pos[0], pos[2], pos[4] };
+    frc::SmartDashboard::PutNumber("X", pos[0]);
+    frc::SmartDashboard::PutNumber("Y", pos[1]);
+    frc::SmartDashboard::PutNumber("Rot", pos[5]);
+    return std::vector<double> { pos[0], pos[1], pos[5] };
 }

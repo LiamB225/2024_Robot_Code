@@ -16,6 +16,11 @@ Drive::Drive()
     backLeftEncoder.SetVelocityConversionFactor(0.00797964534);
     backRightEncoder.SetVelocityConversionFactor(0.00797964534);
 
+    frontLeftEncoder.SetPositionConversionFactor(0.4787787204);
+    frontRightEncoder.SetPositionConversionFactor(0.4787787204);
+    backLeftEncoder.SetPositionConversionFactor(0.4787787204);
+    backRightEncoder.SetPositionConversionFactor(0.4787787204);
+
     frontLeftPID.SetPID(kPFrontLeft, 0.0, 0.0);
     frontRightPID.SetPID(kPFrontRight, 0.0, 0.0);
     backLeftPID.SetPID(kPBackLeft, 0.0, 0.0);
@@ -24,7 +29,6 @@ Drive::Drive()
     XProfile = new frc::TrapezoidProfile<units::meters>(constraintsX);
     YProfile = new frc::TrapezoidProfile<units::meters>(constraintsY);
     RotProfile = new frc::TrapezoidProfile<units::degrees>(constraintsRot);
-    ProfileTimer.Start();
 }
 
 void Drive::Cartesian(double drivePower, double strafePower, double turnPower)
@@ -49,21 +53,37 @@ void Drive::Track(std::vector<double> currentPos)
     frc::MecanumDriveWheelSpeeds wheelSpeeds { currentflvel, currentfrvel, currentblvel, currentbrvel };
     auto [forward, sideways, angular] = m_kinematics.ToChassisSpeeds(wheelSpeeds);
 
+    units::meter_t currentflpos = (units::meter_t)(frontLeftEncoder.GetPosition());
+    units::meter_t currentfrpos = (units::meter_t)(frontRightEncoder.GetPosition());
+    units::meter_t currentblpos = (units::meter_t)(backLeftEncoder.GetPosition());
+    units::meter_t currentbrpos = (units::meter_t)(backRightEncoder.GetPosition());
+    frc::MecanumDriveWheelPositions wheelPositions { currentflpos, currentfrpos, currentblpos, currentbrpos };
+
+    frc::Rotation2d m_rotation { (units::degree_t)(currentPos[2]) };
+    frc::Pose2d m_visionPosition { (units::meter_t)(currentPos[0]), (units::meter_t)(currentPos[1]), m_rotation };
+
+    if(currentPos[0] != 0.0 || currentPos[1] != 0.0 || currentPos[2] != 0.0)
+    {
+        m_poseEstimator.AddVisionMeasurement(m_visionPosition, ProfileTimer.Get());
+    }
+
+    frc::Pose2d robotPos = m_poseEstimator.UpdateWithTime(ProfileTimer.Get(), gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), wheelPositions);
+
     auto velocityX = XProfile->Calculate(
-        ProfileTimer.Get(),
-        frc::TrapezoidProfile<units::meters>::State { (units::meter_t)(currentPos[0]), forward},
+        0.0_s,
+        frc::TrapezoidProfile<units::meters>::State { (units::meter_t)(robotPos.X()), forward},
         frc::TrapezoidProfile<units::meters>::State { setpointX, 0.0_mps}
     );
 
     auto velocityY = YProfile->Calculate(
-        ProfileTimer.Get(),
-        frc::TrapezoidProfile<units::meters>::State { (units::meter_t)(currentPos[1]), sideways},
+        0.0_s,
+        frc::TrapezoidProfile<units::meters>::State { (units::meter_t)(robotPos.Y()), sideways},
         frc::TrapezoidProfile<units::meters>::State { setpointY, 0.0_mps}
     );
 
     auto velocityRot = RotProfile->Calculate(
-        ProfileTimer.Get(),
-        frc::TrapezoidProfile<units::degrees>::State { (units::meter_t)(currentPos[2]), (units::degrees_per_second_t)(angular * 57.2958)},
+        0.0_s,
+        frc::TrapezoidProfile<units::degrees>::State { (units::degree_t)(robotPos.Rotation().Degrees()), (units::degrees_per_second_t)(angular * 57.2958)},
         frc::TrapezoidProfile<units::degrees>::State { setpointRot, 0.0_deg_per_s}
     );
 

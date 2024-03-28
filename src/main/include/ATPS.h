@@ -7,6 +7,7 @@
 #include <networktables/NetworkTable.h>
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/DoubleArrayTopic.h>
+#include <frc/smartdashboard/SmartDashboard.h>
 #include <vector>
 #include <iostream>
 
