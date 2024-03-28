@@ -66,6 +66,7 @@ class Drive {
   
   void Cartesian(double drivePower, double strafePower, double turnPower);
   void SetTarget(double targetXPos, double targetYPos, double targetRotPos);
+  void ResetPosition(std::vector<double> currentPos);
   void Track(std::vector<double> currentPos);
   void SetVoltages();
 

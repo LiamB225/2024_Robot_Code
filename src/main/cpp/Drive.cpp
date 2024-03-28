@@ -38,10 +38,22 @@ void Drive::Cartesian(double drivePower, double strafePower, double turnPower)
 
 void Drive::SetTarget(double targetXPos, double targetYPos, double targetRotPos)
 {
-    ProfileTimer.Reset();
+    //ProfileTimer.Reset();
     setpointX = (units::meter_t)(targetXPos);
     setpointY = (units::meter_t)(targetYPos);
     setpointRot = (units::degree_t)(targetRotPos);
+}
+
+void Drive::ResetPosition(std::vector<double> currentPos)
+{
+    units::meter_t currentflpos = (units::meter_t)(frontLeftEncoder.GetPosition());
+    units::meter_t currentfrpos = (units::meter_t)(frontRightEncoder.GetPosition());
+    units::meter_t currentblpos = (units::meter_t)(backLeftEncoder.GetPosition());
+    units::meter_t currentbrpos = (units::meter_t)(backRightEncoder.GetPosition());
+    frc::MecanumDriveWheelPositions wheelPositions { currentflpos, currentfrpos, currentblpos, currentbrpos };
+    frc::Rotation2d m_rotation { (units::degree_t)(currentPos[2]) };
+    frc::Pose2d m_visionPosition { (units::meter_t)(currentPos[0]), (units::meter_t)(currentPos[1]), m_rotation };
+    m_poseEstimator.ResetPosition(gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), wheelPositions, m_visionPosition);
 }
 
 void Drive::Track(std::vector<double> currentPos)
@@ -86,6 +98,9 @@ void Drive::Track(std::vector<double> currentPos)
         frc::TrapezoidProfile<units::degrees>::State { (units::degree_t)(robotPos.Rotation().Degrees()), (units::degrees_per_second_t)(angular * 57.2958)},
         frc::TrapezoidProfile<units::degrees>::State { setpointRot, 0.0_deg_per_s}
     );
+
+    double newX = velocityX.velocity.value() * cos(robotPos.Rotation().Degrees().value()) + velocityY.velocity.value() * sin(robotPos.Rotation().Degrees().value());
+    double newY = velocityX.velocity.value() * sin(robotPos.Rotation().Degrees().value()) - velocityY.velocity.value() * cos(robotPos.Rotation().Degrees().value());
 
     frc::ChassisSpeeds chassisSpeeds {velocityX.velocity, velocityY.velocity, velocityRot.velocity * 0.0174533};
     auto [fl, fr, bl, br] = m_kinematics.ToWheelSpeeds(chassisSpeeds);
