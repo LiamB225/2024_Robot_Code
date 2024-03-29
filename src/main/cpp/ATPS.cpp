@@ -24,5 +24,5 @@ std::vector<double> ATPS::PositionSpeaker()
 
 double ATPS::ElevatorHeight()
 {
-    
+    return 0.0;
 }
