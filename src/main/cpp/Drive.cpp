@@ -10,16 +10,20 @@ Drive::Drive()
 
     frontRightMotor.SetInverted(true);
     backRightMotor.SetInverted(true);
+    frontLeftMotor.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+    frontRightMotor.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+    backLeftMotor.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+    backRightMotor.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
     
-    frontLeftEncoder.SetVelocityConversionFactor(0.00797964534);
-    frontRightEncoder.SetVelocityConversionFactor(0.00797964534);
-    backLeftEncoder.SetVelocityConversionFactor(0.00797964534);
-    backRightEncoder.SetVelocityConversionFactor(0.00797964534);
+    frontLeftEncoder.SetVelocityConversionFactor(0.00797964534 / 9.13);
+    frontRightEncoder.SetVelocityConversionFactor(0.00797964534 / 9.13);
+    backLeftEncoder.SetVelocityConversionFactor(0.00797964534 / 9.13);
+    backRightEncoder.SetVelocityConversionFactor(0.00797964534 / 9.13);
 
-    frontLeftEncoder.SetPositionConversionFactor(0.4787787204);
-    frontRightEncoder.SetPositionConversionFactor(0.4787787204);
-    backLeftEncoder.SetPositionConversionFactor(0.4787787204);
-    backRightEncoder.SetPositionConversionFactor(0.4787787204);
+    frontLeftEncoder.SetPositionConversionFactor(0.4787787204 / 9.13);
+    frontRightEncoder.SetPositionConversionFactor(0.4787787204 / 9.13);
+    backLeftEncoder.SetPositionConversionFactor(0.4787787204 / 9.13);
+    backRightEncoder.SetPositionConversionFactor(0.4787787204 / 9.13);
 
     frontLeftPID.SetPID(kPFrontLeft, 0.0, 0.0);
     frontRightPID.SetPID(kPFrontRight, 0.0, 0.0);
@@ -29,6 +33,7 @@ Drive::Drive()
     XProfile = new frc::TrapezoidProfile<units::meters>(constraintsX);
     YProfile = new frc::TrapezoidProfile<units::meters>(constraintsY);
     RotProfile = new frc::TrapezoidProfile<units::degrees>(constraintsRot);
+    ProfileTimer.Start();
 }
 
 void Drive::Cartesian(double drivePower, double strafePower, double turnPower)
@@ -38,7 +43,7 @@ void Drive::Cartesian(double drivePower, double strafePower, double turnPower)
 
 void Drive::SetTarget(double targetXPos, double targetYPos, double targetRotPos)
 {
-    //ProfileTimer.Reset();
+    ProfileTimer.Reset();
     setpointX = (units::meter_t)(targetXPos);
     setpointY = (units::meter_t)(targetYPos);
     setpointRot = (units::degree_t)(targetRotPos);
@@ -63,7 +68,6 @@ void Drive::EstimatePosition(std::vector<double> currentPos)
     units::meter_t currentblpos = (units::meter_t)(backLeftEncoder.GetPosition());
     units::meter_t currentbrpos = (units::meter_t)(backRightEncoder.GetPosition());
     frc::MecanumDriveWheelPositions wheelPositions { currentflpos, currentfrpos, currentblpos, currentbrpos };
-    m_wheelPositions = wheelPositions;
 
     frc::Rotation2d m_rotation { (units::degree_t)(currentPos[2]) };
     frc::Pose2d m_visionPosition { (units::meter_t)(currentPos[0]), (units::meter_t)(currentPos[1]), m_rotation };
@@ -73,7 +77,7 @@ void Drive::EstimatePosition(std::vector<double> currentPos)
         m_poseEstimator.AddVisionMeasurement(m_visionPosition, ProfileTimer.Get());
     }
 
-    frc::Pose2d robotPos = m_poseEstimator.GetEstimatedPosition();
+    m_poseEstimator.UpdateWithTime(ProfileTimer.Get(), gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), wheelPositions);
 }
 
 void Drive::Track()
@@ -85,35 +89,47 @@ void Drive::Track()
     frc::MecanumDriveWheelSpeeds wheelSpeeds { currentflvel, currentfrvel, currentblvel, currentbrvel };
     auto [forward, sideways, angular] = m_kinematics.ToChassisSpeeds(wheelSpeeds);
 
-    frc::Pose2d robotPos = m_poseEstimator.UpdateWithTime(ProfileTimer.Get(), gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), m_wheelPositions);
+    frc::Pose2d robotPos = m_poseEstimator.GetEstimatedPosition();
+
+    frc::SmartDashboard::PutNumber("estimated X", robotPos.X().value());
+    frc::SmartDashboard::PutNumber("estimated Y", robotPos.Y().value());
+    frc::SmartDashboard::PutNumber("estimated Rot", robotPos.Rotation().Degrees().value());
+
+    currentTime = ProfileTimer.Get();
 
     auto velocityX = XProfile->Calculate(
-        0.0_s,
-        frc::TrapezoidProfile<units::meters>::State { (units::meter_t)(robotPos.X()), forward},
-        frc::TrapezoidProfile<units::meters>::State { setpointX, 0.0_mps}
+       currentTime - lastTime,
+       frc::TrapezoidProfile<units::meters>::State { robotPos.X(), forward},
+       frc::TrapezoidProfile<units::meters>::State { setpointX, 0.0_mps}
     );
 
     auto velocityY = YProfile->Calculate(
-        0.0_s,
-        frc::TrapezoidProfile<units::meters>::State { (units::meter_t)(robotPos.Y()), sideways},
-        frc::TrapezoidProfile<units::meters>::State { setpointY, 0.0_mps}
+       currentTime - lastTime,
+       frc::TrapezoidProfile<units::meters>::State { robotPos.Y(), sideways},
+       frc::TrapezoidProfile<units::meters>::State { setpointY, 0.0_mps}
     );
 
-    auto velocityRot = RotProfile->Calculate(
-        0.0_s,
-        frc::TrapezoidProfile<units::degrees>::State { (units::degree_t)(robotPos.Rotation().Degrees()), (units::degrees_per_second_t)(angular * 57.2958)},
-        frc::TrapezoidProfile<units::degrees>::State { setpointRot, 0.0_deg_per_s}
-    );
+    // auto velocityRot = RotProfile->Calculate(
+    //    currentTime - lastTime,
+    //    frc::TrapezoidProfile<units::degrees>::State { robotPos.Rotation().Degrees(), (units::degrees_per_second_t)(angular * 57.2958)},
+    //    frc::TrapezoidProfile<units::degrees>::State { setpointRot, 0.0_deg_per_s}
+    // );
 
-    double newX = velocityX.velocity.value() * cos(robotPos.Rotation().Degrees().value()) + velocityY.velocity.value() * sin(robotPos.Rotation().Degrees().value());
-    double newY = velocityX.velocity.value() * sin(robotPos.Rotation().Degrees().value()) - velocityY.velocity.value() * cos(robotPos.Rotation().Degrees().value());
+    double newX = velocityX.velocity.value() * cos(robotPos.Rotation().Radians().value()) + velocityY.velocity.value() * sin(robotPos.Rotation().Radians().value());
+    double newY = velocityX.velocity.value() * sin(robotPos.Rotation().Radians().value()) - velocityY.velocity.value() * cos(robotPos.Rotation().Radians().value());
 
-    frc::ChassisSpeeds chassisSpeeds {(units::meter_t)(newX), (units::meter_t)(newY), velocityRot.velocity * 0.0174533};
+    frc::SmartDashboard::PutNumber("Xvelocity", velocityX.velocity.value());
+    frc::SmartDashboard::PutNumber("newX", newX);
+    frc::SmartDashboard::PutNumber("newY", newY);
+
+    frc::ChassisSpeeds chassisSpeeds {(units::meters_per_second_t)(newX), (units::meters_per_second_t)(0.0), (units::degrees_per_second_t)(0.0)};
     auto [fl, fr, bl, br] = m_kinematics.ToWheelSpeeds(chassisSpeeds);
     frontLeftVelocity = fl;
     frontRightVelocity = fr;
     backLeftVelocity = bl;
     backRightVelocity = br;
+
+    lastTime = currentTime;
 }
 
 void Drive::SetVoltages()
@@ -122,4 +138,12 @@ void Drive::SetVoltages()
     frontRightMotor.SetVoltage(frontRightFF.Calculate(frontRightVelocity) + (units::volt_t)(frontRightPID.Calculate(frontRightEncoder.GetVelocity(), frontRightVelocity.value())));
     backLeftMotor.SetVoltage(backLeftFF.Calculate(backLeftVelocity) + (units::volt_t)(backLeftPID.Calculate(backLeftEncoder.GetVelocity(), backLeftVelocity.value())));
     backRightMotor.SetVoltage(backRightFF.Calculate(backRightVelocity) + (units::volt_t)(backRightPID.Calculate(backRightEncoder.GetVelocity(), backRightVelocity.value())));
+    frc::SmartDashboard::PutNumber("FrontleftActual", frontLeftEncoder.GetVelocity());
+    frc::SmartDashboard::PutNumber("FrontrightActual", frontRightEncoder.GetVelocity());
+    frc::SmartDashboard::PutNumber("backleftActual", backLeftEncoder.GetVelocity());
+    frc::SmartDashboard::PutNumber("backrightActual", backRightEncoder.GetVelocity());
+    frc::SmartDashboard::PutNumber("FrontleftExpected", frontLeftVelocity.value());
+    frc::SmartDashboard::PutNumber("FrontrightExpected", frontRightVelocity.value());
+    frc::SmartDashboard::PutNumber("backleftExpected", backLeftVelocity.value());
+    frc::SmartDashboard::PutNumber("backrightExpected", backRightVelocity.value());
 }

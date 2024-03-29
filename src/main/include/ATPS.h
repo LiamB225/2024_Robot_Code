@@ -10,6 +10,7 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 class ATPS {
  public:
@@ -18,4 +19,8 @@ class ATPS {
   nt::NetworkTableInstance ntinst;
 
   std::vector<double> PositionSpeaker();
+  double ElevatorHeight();
+  double distance = 0.0;
+  double redCenterX = 8.308467;
+  double redCenterY = 1.442593;
 };

@@ -32,7 +32,7 @@ void Robot::AutonomousInit()
   std::vector<double> currentPos = m_ATPS->PositionSpeaker();
   while(currentPos[0] == 0.0 && currentPos[1] == 0.0 && currentPos[2] == 0.0)
   {
-    currentPos = m_ATPS->PositionSpeaker();
+   currentPos = m_ATPS->PositionSpeaker();
   }
   m_Drive->ResetPosition(currentPos);
   m_Drive->SetTarget(5.8, 1.44, 179);
@@ -95,6 +95,8 @@ void Robot::TeleopPeriodic()
   if(xboxRightBumper)
   {
     m_Shooter->AngleUp();
+    //m_Drive->Track();
+    //m_Drive->SetVoltages();
   }
   else if(xboxLeftBumper)
   {

@@ -30,11 +30,11 @@ class Drive {
   Drive();
 
   frc::TrapezoidProfile<units::meters> *XProfile;
-  frc::TrapezoidProfile<units::meters>::Constraints constraintsX{ 0.5_mps, 0.5_mps_sq };
+  frc::TrapezoidProfile<units::meters>::Constraints constraintsX{ 0.5_mps, 15_mps_sq };
   units::meter_t setpointX;
 
   frc::TrapezoidProfile<units::meters> *YProfile;
-  frc::TrapezoidProfile<units::meters>::Constraints constraintsY{ 0.5_mps, 0.5_mps_sq };
+  frc::TrapezoidProfile<units::meters>::Constraints constraintsY{ 0.5_mps, 15_mps_sq };
   units::meter_t setpointY;
 
   frc::TrapezoidProfile<units::degrees> *RotProfile;
@@ -42,27 +42,50 @@ class Drive {
   units::degree_t setpointRot;
 
   frc::Timer ProfileTimer;
+  units::second_t currentTime = 0.0_s;
+  units::second_t lastTime = 0.0_s;
 
-  double kPFrontLeft = 0.20598;
-  double kPFrontRight = 0.17521;
-  double kPBackLeft = 0.36851;
-  double kPBackRight = 0.15217;
+  double kPFrontLeft = 0.70234;
+  double kPFrontRight = 1.3031;
+  double kPBackLeft = 1.6944;
+  double kPBackRight = 0.80585;
 
   frc::PIDController frontLeftPID{ kPFrontLeft, 0.0, 0.0 };
-  frc::SimpleMotorFeedforward<units::meters> frontLeftFF { 0.28424_V, 2.254_V * 1_s / 1_m, 0.34673_V * 1_s * 1_s / 1_m };
+  frc::SimpleMotorFeedforward<units::meters> frontLeftFF { 0.30923_V, 2.3046_V * 1_s / 1_m, 0.32495_V * 1_s * 1_s / 1_m };
   units::meters_per_second_t frontLeftVelocity;
 
   frc::PIDController frontRightPID{ kPFrontRight, 0.0, 0.0 };
-  frc::SimpleMotorFeedforward<units::meters> frontRightFF { 0.29889_V, 2.3081_V * 1_s / 1_m, 0.29396_V * 1_s * 1_s / 1_m };
+  frc::SimpleMotorFeedforward<units::meters> frontRightFF { 0.30966_V, 2.3462_V * 1_s / 1_m, 0.34659_V * 1_s * 1_s / 1_m };
   units::meters_per_second_t frontRightVelocity;
 
   frc::PIDController backLeftPID{ kPBackLeft, 0.0, 0.0 };
-  frc::SimpleMotorFeedforward<units::meters> backLeftFF { 0.30486_V, 2.247_V * 1_s / 1_m, 0.35837_V * 1_s * 1_s / 1_m };
+  frc::SimpleMotorFeedforward<units::meters> backLeftFF { 0.2695_V, 2.3109_V * 1_s / 1_m, 0.46507_V * 1_s * 1_s / 1_m };
   units::meters_per_second_t backLeftVelocity;
 
   frc::PIDController backRightPID{ kPBackRight, 0.0, 0.0 };
-  frc::SimpleMotorFeedforward<units::meters> backRightFF { 0.23311_V, 2.4556_V * 1_s / 1_m, 0.2923_V * 1_s * 1_s / 1_m };
+  frc::SimpleMotorFeedforward<units::meters> backRightFF { 0.29137_V, 2.4182_V * 1_s / 1_m, 0.36066_V * 1_s * 1_s / 1_m };
   units::meters_per_second_t backRightVelocity;
+
+  // double kPFrontLeft = 1.1264;
+  // double kPFrontRight = 1.1264;
+  // double kPBackLeft = 1.1264;
+  // double kPBackRight = 1.1264;
+
+  // frc::PIDController frontLeftPID{ kPFrontLeft, 0.0, 0.0 };
+  // frc::SimpleMotorFeedforward<units::meters> frontLeftFF { 0.29494_V, 2.345_V * 1_s / 1_m, 0.3755_V * 1_s * 1_s / 1_m };
+  // units::meters_per_second_t frontLeftVelocity;
+
+  // frc::PIDController frontRightPID{ kPFrontRight, 0.0, 0.0 };
+  // frc::SimpleMotorFeedforward<units::meters> frontRightFF { 0.29494_V, 2.345_V * 1_s / 1_m, 0.3755_V * 1_s * 1_s / 1_m };
+  // units::meters_per_second_t frontRightVelocity;
+
+  // frc::PIDController backLeftPID{ kPBackLeft, 0.0, 0.0 };
+  // frc::SimpleMotorFeedforward<units::meters> backLeftFF { 0.29494_V, 2.345_V * 1_s / 1_m, 0.3755_V * 1_s * 1_s / 1_m };
+  // units::meters_per_second_t backLeftVelocity;
+
+  // frc::PIDController backRightPID{ kPBackRight, 0.0, 0.0 };
+  // frc::SimpleMotorFeedforward<units::meters> backRightFF { 0.29494_V, 2.345_V * 1_s / 1_m, 0.3755_V * 1_s * 1_s / 1_m };
+  // units::meters_per_second_t backRightVelocity;
   
   void Cartesian(double drivePower, double strafePower, double turnPower);
   void SetTarget(double targetXPos, double targetYPos, double targetRotPos);
@@ -90,5 +113,4 @@ class Drive {
   frc::MecanumDriveWheelPositions notWheelPositions { 0.0_m, 0.0_m, 0.0_m, 0.0_m};
   frc::Pose2d notPosition;
   frc::MecanumDrivePoseEstimator m_poseEstimator { m_kinematics, gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), notWheelPositions, notPosition};
-  frc::MecanumDriveWheelPositions m_wheelPositions;
 };

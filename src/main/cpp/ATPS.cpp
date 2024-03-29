@@ -17,5 +17,12 @@ std::vector<double> ATPS::PositionSpeaker()
     frc::SmartDashboard::PutNumber("X", pos[0]);
     frc::SmartDashboard::PutNumber("Y", pos[1]);
     frc::SmartDashboard::PutNumber("Rot", pos[5]);
+    distance = hypot((pos[0] - redCenterX), (pos[1] - redCenterY));
+    frc::SmartDashboard::PutNumber("Distance", distance);
     return std::vector<double> { pos[0], pos[1], pos[5] };
+}
+
+double ATPS::ElevatorHeight()
+{
+    
 }
