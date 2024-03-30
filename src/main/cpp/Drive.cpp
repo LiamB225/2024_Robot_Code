@@ -32,7 +32,7 @@ Drive::Drive()
 
     XProfile = new frc::TrapezoidProfile<units::meters>(constraintsX);
     YProfile = new frc::TrapezoidProfile<units::meters>(constraintsY);
-    RotProfile = new frc::TrapezoidProfile<units::degrees>(constraintsRot);
+    RotProfile = new frc::TrapezoidProfile<units::radians>(constraintsRot);
     ProfileTimer.Start();
 }
 
@@ -46,7 +46,7 @@ void Drive::SetTarget(double targetXPos, double targetYPos, double targetRotPos)
     ProfileTimer.Reset();
     setpointX = (units::meter_t)(targetXPos);
     setpointY = (units::meter_t)(targetYPos);
-    setpointRot = (units::degree_t)(targetRotPos);
+    setpointRot = (units::radian_t)(targetRotPos * 0.0174533);
 }
 
 void Drive::ResetPosition(std::vector<double> currentPos)
@@ -77,7 +77,8 @@ void Drive::EstimatePosition(std::vector<double> currentPos)
         m_poseEstimator.AddVisionMeasurement(m_visionPosition, ProfileTimer.Get());
     }
 
-    m_poseEstimator.UpdateWithTime(ProfileTimer.Get(), gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), wheelPositions);
+    frc::Rotation2d gyroRotation{gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw)};
+    m_poseEstimator.UpdateWithTime(ProfileTimer.Get(), gyroRotation, wheelPositions);
 }
 
 void Drive::Track()
@@ -91,41 +92,38 @@ void Drive::Track()
     frc::Pose2d robotPos = m_poseEstimator.GetEstimatedPosition();
     auto speeds = frc::ChassisSpeeds::FromRobotRelativeSpeeds(m_kinematics.ToChassisSpeeds(wheelSpeeds), robotPos.Rotation());
 
-    // frc::Translation2d robotVel { (units::meter_t)(forward), (units::meter_t)(sideways) };
-    // robotVel.RotateBy(frc::Rotation2d{-robotPos.Rotation().Degrees()});
-
     frc::SmartDashboard::PutNumber("estimated X", robotPos.X().value());
     frc::SmartDashboard::PutNumber("estimated Y", robotPos.Y().value());
     frc::SmartDashboard::PutNumber("estimated Rot", robotPos.Rotation().Degrees().value());
+    frc::SmartDashboard::PutNumber("unprofiledRot", speeds.omega());
 
     currentTime = ProfileTimer.Get();
 
     auto velocityX = XProfile->Calculate(
         20_ms,
-        frc::TrapezoidProfile<units::meters>::State{robotPos.X(), (units::meters_per_second_t)(speeds.vx())},
+        frc::TrapezoidProfile<units::meters>::State{robotPos.X(), speeds.vx},
         frc::TrapezoidProfile<units::meters>::State{setpointX, 0.0_mps});
 
     auto velocityY = YProfile->Calculate(
         20_ms,
-        frc::TrapezoidProfile<units::meters>::State{robotPos.Y(), (units::meters_per_second_t)(speeds.vy())},
+        frc::TrapezoidProfile<units::meters>::State{robotPos.Y(), speeds.vy},
         frc::TrapezoidProfile<units::meters>::State{setpointY, 0.0_mps});
 
     auto velocityRot = RotProfile->Calculate(
-       currentTime - lastTime,
-       frc::TrapezoidProfile<units::degrees>::State { robotPos.Rotation().Degrees(), (units::degrees_per_second_t)(speeds.omega())},
-       frc::TrapezoidProfile<units::degrees>::State { setpointRot, 0.0_deg_per_s}
+       20_ms,
+       frc::TrapezoidProfile<units::radians>::State { robotPos.Rotation().Radians(), speeds.omega},
+       frc::TrapezoidProfile<units::radians>::State { setpointRot, 0.0_rad_per_s}
     );
-
-    // frc::Translation2d newRobotVel { (units::meter_t)(velocityX.velocity), (units::meter_t)(velocityY.velocity) };
-    // newRobotVel.RotateBy(frc::Rotation2d{robotPos.Rotation().Degrees()});
 
     auto newSpeeds = frc::ChassisSpeeds::FromFieldRelativeSpeeds(velocityX.velocity, velocityY.velocity, velocityRot.velocity, robotPos.Rotation());
 
     frc::SmartDashboard::PutNumber("Xvelocity", velocityX.velocity.value());
     frc::SmartDashboard::PutNumber("newX", newSpeeds.vx());
     frc::SmartDashboard::PutNumber("newY", newSpeeds.vy());
+    frc::SmartDashboard::PutNumber("newRot", newSpeeds.omega());
+    frc::SmartDashboard::PutNumber("profileRot", velocityRot.velocity.value());
 
-    frc::ChassisSpeeds chassisSpeeds{(units::meters_per_second_t)(0.0), (units::meters_per_second_t)(0.0), (units::degrees_per_second_t)(newSpeeds.omega())};
+    frc::ChassisSpeeds chassisSpeeds{(units::meters_per_second_t)(0.0), newSpeeds.vy, (units::radians_per_second_t)(0.0)};
     auto [fl, fr, bl, br] = m_kinematics.ToWheelSpeeds(chassisSpeeds);
     frontLeftVelocity = fl;
     frontRightVelocity = fr;

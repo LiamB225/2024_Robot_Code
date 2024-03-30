@@ -37,9 +37,9 @@ class Drive {
   frc::TrapezoidProfile<units::meters>::Constraints constraintsY{ 0.5_mps, 0.5_mps_sq };
   units::meter_t setpointY;
 
-  frc::TrapezoidProfile<units::degrees> *RotProfile;
-  frc::TrapezoidProfile<units::degrees>::Constraints constraintsRot{ 20_deg_per_s, 20_deg_per_s / 1_s };
-  units::degree_t setpointRot;
+  frc::TrapezoidProfile<units::radians> *RotProfile;
+  frc::TrapezoidProfile<units::radians>::Constraints constraintsRot{ 1.0_rad_per_s, 1.0_rad_per_s / 1_s };
+  units::radian_t setpointRot;
 
   frc::Timer ProfileTimer;
   units::second_t currentTime = 0.0_s;
