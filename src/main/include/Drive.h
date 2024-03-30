@@ -30,11 +30,11 @@ class Drive {
   Drive();
 
   frc::TrapezoidProfile<units::meters> *XProfile;
-  frc::TrapezoidProfile<units::meters>::Constraints constraintsX{ 0.5_mps, 0.5_mps_sq };
+  frc::TrapezoidProfile<units::meters>::Constraints constraintsX{ 1.0_mps, 1.0_mps_sq };
   units::meter_t setpointX;
 
   frc::TrapezoidProfile<units::meters> *YProfile;
-  frc::TrapezoidProfile<units::meters>::Constraints constraintsY{ 0.5_mps, 0.5_mps_sq };
+  frc::TrapezoidProfile<units::meters>::Constraints constraintsY{ 1.0_mps, 1.0_mps_sq };
   units::meter_t setpointY;
 
   frc::TrapezoidProfile<units::radians> *RotProfile;

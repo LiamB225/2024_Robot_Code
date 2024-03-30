@@ -90,47 +90,59 @@ void Drive::Track()
     frc::MecanumDriveWheelSpeeds wheelSpeeds{currentflvel, currentfrvel, currentblvel, currentbrvel};
     
     frc::Pose2d robotPos = m_poseEstimator.GetEstimatedPosition();
+    auto robotChassisSpeeds = m_kinematics.ToChassisSpeeds(wheelSpeeds);
     auto speeds = frc::ChassisSpeeds::FromRobotRelativeSpeeds(m_kinematics.ToChassisSpeeds(wheelSpeeds), robotPos.Rotation());
 
     frc::SmartDashboard::PutNumber("estimated X", robotPos.X().value());
     frc::SmartDashboard::PutNumber("estimated Y", robotPos.Y().value());
-    frc::SmartDashboard::PutNumber("estimated Rot", robotPos.Rotation().Degrees().value());
+    frc::SmartDashboard::PutNumber("estimated Rot", robotPos.Rotation().Radians().value());
+    frc::SmartDashboard::PutNumber("unprofiledX", speeds.vx());
+    frc::SmartDashboard::PutNumber("unprofiledY", speeds.vy());
     frc::SmartDashboard::PutNumber("unprofiledRot", speeds.omega());
+    frc::SmartDashboard::PutNumber("chassisspeedX", robotChassisSpeeds.vx());
+    frc::SmartDashboard::PutNumber("chassisspeedY", robotChassisSpeeds.vy());
+    frc::SmartDashboard::PutNumber("chassisspeedOmega", robotChassisSpeeds.omega());
 
     currentTime = ProfileTimer.Get();
 
     auto velocityX = XProfile->Calculate(
-        20_ms,
+        currentTime / 10,
         frc::TrapezoidProfile<units::meters>::State{robotPos.X(), speeds.vx},
-        frc::TrapezoidProfile<units::meters>::State{setpointX, 0.0_mps});
+        frc::TrapezoidProfile<units::meters>::State{setpointX, 0.0_mps}
+    );
 
     auto velocityY = YProfile->Calculate(
-        20_ms,
+        currentTime / 10,
         frc::TrapezoidProfile<units::meters>::State{robotPos.Y(), speeds.vy},
-        frc::TrapezoidProfile<units::meters>::State{setpointY, 0.0_mps});
+        frc::TrapezoidProfile<units::meters>::State{setpointY, 0.0_mps}
+    );
 
     auto velocityRot = RotProfile->Calculate(
-       20_ms,
+       currentTime / 10,
        frc::TrapezoidProfile<units::radians>::State { robotPos.Rotation().Radians(), speeds.omega},
        frc::TrapezoidProfile<units::radians>::State { setpointRot, 0.0_rad_per_s}
     );
 
     auto newSpeeds = frc::ChassisSpeeds::FromFieldRelativeSpeeds(velocityX.velocity, velocityY.velocity, velocityRot.velocity, robotPos.Rotation());
 
-    frc::SmartDashboard::PutNumber("Xvelocity", velocityX.velocity.value());
+    frc::SmartDashboard::PutNumber("profiledXpos", velocityX.position.value());
+    frc::SmartDashboard::PutNumber("profiledYpos", velocityY.position.value());
+    frc::SmartDashboard::PutNumber("profiledRotpos", velocityRot.position.value());
+    frc::SmartDashboard::PutNumber("profiledX", velocityX.velocity.value());
+    frc::SmartDashboard::PutNumber("profiledY", velocityY.velocity.value());
+    frc::SmartDashboard::PutNumber("profiledRot", velocityRot.velocity.value());
     frc::SmartDashboard::PutNumber("newX", newSpeeds.vx());
     frc::SmartDashboard::PutNumber("newY", newSpeeds.vy());
     frc::SmartDashboard::PutNumber("newRot", newSpeeds.omega());
-    frc::SmartDashboard::PutNumber("profileRot", velocityRot.velocity.value());
+    
+    
 
-    frc::ChassisSpeeds chassisSpeeds{(units::meters_per_second_t)(0.0), newSpeeds.vy, (units::radians_per_second_t)(0.0)};
+    frc::ChassisSpeeds chassisSpeeds{newSpeeds.vx, newSpeeds.vy, newSpeeds.omega};
     auto [fl, fr, bl, br] = m_kinematics.ToWheelSpeeds(chassisSpeeds);
     frontLeftVelocity = fl;
     frontRightVelocity = fr;
     backLeftVelocity = bl;
     backRightVelocity = br;
-
-    lastTime = currentTime;
 }
 
 void Drive::SetVoltages()
