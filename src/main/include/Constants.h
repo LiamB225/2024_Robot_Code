@@ -17,9 +17,19 @@
 namespace OperatorConstants {
 
 inline constexpr int kDriverControllerPort = 0;
+const int limitSwitchID = 0;
+const int intakeSensorID = 1;
 const int frontLeftID = 1;
 const int frontRightID = 2;
 const int backLeftID = 3;
 const int backRightID = 4;
+const int leftShooterID = 5;
+const int rightShooterID = 6;
+const int topIntakeID = 7;
+const int bottomIntakeID = 8;
+const int elevatorID = 9;
+const int pneumaticsHubID = 10;
+const int SolenoidForwardID = 1;
+const int SolenoidReverseID = 0;
 
 }  // namespace OperatorConstants
