@@ -28,5 +28,8 @@ const int rightShooterID = 6;
 const int topIntakeID = 7;
 const int bottomIntakeID = 8;
 const int elevatorID = 9;
+const int pneumaticsHubID = 10;
+const int SolenoidForwardID = 1;
+const int SolenoidReverseID = 0;
 
 }  // namespace OperatorConstants

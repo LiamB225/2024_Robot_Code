@@ -20,7 +20,14 @@ class ATPS {
 
   std::vector<double> PositionSpeaker();
   double ElevatorHeight();
+  double AngleError();
+
+  double currentX = 0.0;
+  double currentY = 0.0;
+  double currentRot = 0.0;
+  double angleError = 0.0;
   double distance = 0.0;
+  double elevatorPos = 0.0;
   double redCenterX = 8.308467;
   double redCenterY = 1.442593;
 };

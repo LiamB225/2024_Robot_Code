@@ -5,3 +5,18 @@
 #include "Climber.h"
 
 Climber::Climber() = default;
+
+void Climber::PistonsOut()
+{
+    ClimberPistons.Set(frc::DoubleSolenoid::kForward);
+}
+
+void Climber::PistonsIn()
+{
+    ClimberPistons.Set(frc::DoubleSolenoid::kReverse);
+}
+
+void Climber::PistonsToggle()
+{
+    ClimberPistons.Toggle();
+}

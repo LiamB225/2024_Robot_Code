@@ -4,7 +4,24 @@
 
 #pragma once
 
+#include <frc/DoubleSolenoid.h>
+#include <frc/DigitalInput.h>
+
+#include "Constants.h"
+
 class Climber {
  public:
   Climber();
+
+  void PistonsOut();
+  void PistonsIn();
+  void PistonsToggle();
+
+  frc::DoubleSolenoid ClimberPistons { 
+    OperatorConstants::pneumaticsHubID, 
+    frc::PneumaticsModuleType::REVPH, 
+    OperatorConstants::SolenoidForwardID, 
+    OperatorConstants::SolenoidReverseID
+  };
+
 };

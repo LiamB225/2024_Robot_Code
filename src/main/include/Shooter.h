@@ -5,6 +5,7 @@
 #pragma once
 
 #include <rev/CANSparkMax.h>
+#include <rev/SparkPIDController.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc/DigitalInput.h>
 #include <frc/Timer.h>
@@ -17,13 +18,17 @@ class Shooter {
   Shooter();
 
   //Flywheels
-  void Shoot();
-  void StopShooting();
+  void Shoot(double elevatorHeight, double angleError, double actualAngle);
+  void StopShooting(bool runWheels);
+  // bool IsDone();
   bool runOnceFlywheels = true;
+  bool runOnceIdle = true;
   rev::CANSparkMax leftShooterMotor {OperatorConstants::leftShooterID, rev::CANSparkMax::MotorType::kBrushless};
   rev::SparkRelativeEncoder leftShooterEncoder = leftShooterMotor.GetEncoder();
   rev::CANSparkMax rightShooterMotor {OperatorConstants::rightShooterID, rev::CANSparkMax::MotorType::kBrushless};
   rev::SparkRelativeEncoder rightShooterEncoder = rightShooterMotor.GetEncoder();
+  rev::SparkPIDController leftPID = leftShooterMotor.GetPIDController();
+  rev::SparkPIDController rightPID = rightShooterMotor.GetPIDController();
   frc::Timer timer;
 
   //Intake
@@ -36,16 +41,18 @@ class Shooter {
   rev::CANSparkMax bottomIntakeMotor {OperatorConstants::bottomIntakeID, rev::CANSparkMax::MotorType::kBrushed};
   frc::DigitalInput intakeSensor {OperatorConstants::intakeSensorID};
 
-  //Elevator Manual Control
+  //Elevator Control
   void AngleUp();
   void AngleDown();
   void StopElevator();
-  bool ZeroElevator();
+  void ZeroElevator();
   void GetPosition();
+  void AutoElevatorControl(double elevatorHeight);
   bool runOnceElevator = true;
   bool runOnceZero = true;
 
   rev::CANSparkMax elevatorMotor {OperatorConstants::elevatorID, rev::CANSparkMax::MotorType::kBrushless};
   rev::SparkRelativeEncoder elevatorEncoder = elevatorMotor.GetEncoder();
+  rev::SparkPIDController elevatorPID = elevatorMotor.GetPIDController();
   frc::DigitalInput elevatorLimit {OperatorConstants::limitSwitchID};
 };

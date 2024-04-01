@@ -9,12 +9,14 @@
 #include <frc/TimedRobot.h>
 #include <frc2/command/CommandPtr.h>
 #include <frc/XboxController.h>
+#include <frc/Compressor.h>
 #include <vector>
 
 #include "Drive.h"
 #include "Constants.h"
 #include "ATPS.h"
 #include "Shooter.h"
+#include "Climber.h"
 
 class Robot : public frc::TimedRobot {
  public:
@@ -35,6 +37,7 @@ class Robot : public frc::TimedRobot {
   Drive *m_Drive;
   ATPS *m_ATPS;
   Shooter *m_Shooter;
+  Climber *m_Climber;
 
   //Xbox Controller
   void GetXbox();
@@ -48,9 +51,24 @@ class Robot : public frc::TimedRobot {
   bool xboxRightBumper = false;
   bool xboxLeftBumper = false;
   bool xboxB = false;
+  bool xboxA = false;
+  bool xboxX = true;
+
+  //auto shooting
+  bool runOnceShooter = true;
+  std::vector<double> currentPos;
+  double elevatorHeight = 0.0;
+  double angleError = 0.0;
+  void AutoShoot();
+  void StopAutoShoot();
+  void EstimateElevatorHeight();
+  void Intake();
+  void IntakeLimited();
+  void ElevatorControl();
 
   //Drive Train
   void NormalDrive();
-  void SpeakerDrive();
-  void StageDrive();
+
+  //Compressor
+  frc::Compressor Compressor { OperatorConstants::pneumaticsHubID, frc::PneumaticsModuleType::REVPH };
 };

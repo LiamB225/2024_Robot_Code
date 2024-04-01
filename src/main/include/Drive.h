@@ -38,7 +38,7 @@ class Drive {
   units::meter_t setpointY;
 
   frc::TrapezoidProfile<units::radians> *RotProfile;
-  frc::TrapezoidProfile<units::radians>::Constraints constraintsRot{ 1.0_rad_per_s, 1.0_rad_per_s / 1_s };
+  frc::TrapezoidProfile<units::radians>::Constraints constraintsRot{ 2.0_rad_per_s, 5.0_rad_per_s / 1_s };
   units::radian_t setpointRot;
 
   frc::Timer ProfileTimer;
@@ -92,6 +92,8 @@ class Drive {
   void ResetPosition(std::vector<double> currentPos);
   void EstimatePosition(std::vector<double> currentPos);
   void Track();
+  void TrackTeleop();
+  void SetShooterTarget(double targetRotPos);
   void SetVoltages();
 
   rev::CANSparkMax frontLeftMotor {OperatorConstants::frontLeftID, rev::CANSparkMax::MotorType::kBrushless};
@@ -113,4 +115,5 @@ class Drive {
   frc::MecanumDriveWheelPositions notWheelPositions { 0.0_m, 0.0_m, 0.0_m, 0.0_m};
   frc::Pose2d notPosition;
   frc::MecanumDrivePoseEstimator m_poseEstimator { m_kinematics, gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), notWheelPositions, notPosition};
+  units::radian_t currentAngle = 0.0_rad;
 };

@@ -15,11 +15,15 @@ void Robot::RobotInit()
   m_Drive = new Drive();
   m_ATPS = new ATPS();
   m_Shooter = new Shooter();
+  m_Climber = new Climber();
+
+  Compressor.EnableDigital();
 }
 
 void Robot::RobotPeriodic()
 {
   m_Drive->EstimatePosition(m_ATPS->PositionSpeaker());
+  currentPos = m_ATPS->PositionSpeaker();
   //frc2::CommandScheduler::GetInstance().Run();
 }
 
@@ -29,7 +33,6 @@ void Robot::DisabledPeriodic() {}
 
 void Robot::AutonomousInit()
 {
-  std::vector<double> currentPos = m_ATPS->PositionSpeaker();
   while(currentPos[0] == 0.0 && currentPos[1] == 0.0 && currentPos[2] == 0.0)
   {
    currentPos = m_ATPS->PositionSpeaker();
@@ -46,7 +49,7 @@ void Robot::AutonomousPeriodic()
 
 void Robot::TeleopInit()
 {
-  m_Drive->SetTarget(0.0, -1.0, 0.0);
+  m_Climber->PistonsIn();
 }
 
 void Robot::TeleopPeriodic()
@@ -54,69 +57,44 @@ void Robot::TeleopPeriodic()
   //Get Xbox Inputs
   GetXbox();
 
-  //MecanumDrive
-  NormalDrive();
-
   //Flywheels
   if(xboxY)
   {
-    m_Shooter->Shoot();
+    AutoShoot();
   }
   else
   {
     //Intake
     if(m_Shooter->GetIntakeSensor())
     {
-      if(xboxRightTrigger)
+      //Elevator
+      if(xboxB)
       {
-        m_Shooter->IntakeIn();
-      }
-      else if(xboxLeftTrigger)
-      {
-        m_Shooter->IntakeOut();
+        ElevatorControl();
       }
       else
       {
-        m_Shooter->StopIntake();
+        m_Shooter->ZeroElevator();
       }
-    }
-    else if(xboxLeftTrigger)
-    {
-      m_Shooter->IntakeOut();
+      Intake();
     }
     else
     {
-      m_Shooter->StopIntake();
+      IntakeLimited();
+      EstimateElevatorHeight();
     }
-    m_Shooter->StopShooting();
-  }
-  
-  //Elevator
-  if(xboxRightBumper)
-  {
-    m_Shooter->AngleUp();
-    //m_Drive->Track();
-    //m_Drive->SetVoltages();
-  }
-  else if(xboxLeftBumper)
-  {
-    m_Shooter->AngleDown();
-  }
-  else if(!xboxB)
-  {
-    m_Shooter->StopElevator();
-  }
+    
+    StopAutoShoot();
 
-  if(xboxB)
-  {
-    if(m_Shooter->ZeroElevator())
-    {
-      xboxB = false;
-    }
+    //MecanumDrive
+    NormalDrive();
   }
   
-  m_Shooter->GetPosition();
-  m_ATPS->PositionSpeaker();
+  //Pistons
+  if(xboxA)
+  {
+    m_Climber->PistonsToggle();
+  }
 }
 
 void Robot::TestPeriodic() {}
@@ -162,9 +140,10 @@ void Robot::GetXbox()
   }
 
   //Shooting Control
-  if(Xbox.GetYButtonPressed())
+  xboxY = Xbox.GetYButton();
+  if(Xbox.GetXButtonPressed())
   {
-    xboxY =! xboxY;
+    xboxX =! xboxX;
   }
 
   //Elevator Control
@@ -175,6 +154,9 @@ void Robot::GetXbox()
     xboxB =! xboxB;
   }
   frc::SmartDashboard::PutNumber("B", xboxB);
+
+  //Piston Controls
+  xboxA = Xbox.GetAButtonPressed();
 }
 
 void Robot::NormalDrive()
@@ -182,9 +164,100 @@ void Robot::NormalDrive()
   m_Drive->Cartesian(-xboxLY, xboxLX, xboxRX);
 }
 
-void Robot::StageDrive()
+void Robot::AutoShoot()
 {
+  //auto aiming
+  if(currentPos[0] != 0.0 && currentPos[1] != 0.0 && currentPos[2] != 0.0 && runOnceShooter)
+  {
+    m_Drive->ResetPosition(m_ATPS->PositionSpeaker());
+    runOnceShooter = false;
+  }
+  else
+  {
+    xboxY = false;
+  }
+  m_Shooter->Shoot(elevatorHeight, angleError, currentPos[0]);
+  m_Drive->TrackTeleop();
+  m_Drive->SetVoltages();
+  m_Shooter->AutoElevatorControl(elevatorHeight);
+  frc::SmartDashboard::PutNumber("elevator Height", m_ATPS->ElevatorHeight());
+}
 
+void Robot::StopAutoShoot()
+{
+  m_Shooter->StopShooting(xboxX);
+  m_Drive->SetShooterTarget(m_ATPS->AngleError());
+  elevatorHeight = m_ATPS->ElevatorHeight();
+  angleError = m_ATPS->AngleError();
+  runOnceShooter = true;
+}
+
+void Robot::EstimateElevatorHeight()
+{
+  if(510.0 > m_ATPS->ElevatorHeight() && m_ATPS->ElevatorHeight() > 400.0)
+  {
+    m_Shooter->AutoElevatorControl(450.0);
+  }
+  else if(400.0 > m_ATPS->ElevatorHeight() && m_ATPS->ElevatorHeight() > 300.0)
+  {
+    m_Shooter->AutoElevatorControl(350.0);
+  }
+  else if(300.0 > m_ATPS->ElevatorHeight() && m_ATPS->ElevatorHeight() > 200.0)
+  {
+    m_Shooter->AutoElevatorControl(250.0);
+  }
+  else if(200.0 > m_ATPS->ElevatorHeight() && m_ATPS->ElevatorHeight() > 100.0)
+  {
+    m_Shooter->AutoElevatorControl(150.0);
+  }
+  else
+  {
+    m_Shooter->AutoElevatorControl(50.0);
+  }
+}
+
+void Robot::Intake()
+{
+  if(xboxRightTrigger)
+  {
+    m_Shooter->IntakeIn();
+  }
+  else if(xboxLeftTrigger)
+  {
+    m_Shooter->IntakeOut();
+  }
+  else
+  {
+    m_Shooter->StopIntake();
+  }
+}
+
+void Robot::IntakeLimited()
+{
+  if(xboxLeftTrigger)
+  {
+    m_Shooter->IntakeOut();
+  }
+  else
+  {
+    m_Shooter->StopIntake();
+  }
+}
+
+void Robot::ElevatorControl()
+{
+  if(xboxRightBumper)
+  {
+    m_Shooter->AngleUp();
+  }
+  else if(xboxLeftBumper)
+  {
+    m_Shooter->AngleDown();
+  }
+  else
+  {
+    m_Shooter->StopElevator();
+  }
 }
 
 #ifndef RUNNING_FRC_TESTS

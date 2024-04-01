@@ -41,14 +41,7 @@ void Drive::Cartesian(double drivePower, double strafePower, double turnPower)
     myMecanumDrive->DriveCartesian(drivePower, strafePower, turnPower);
 }
 
-void Drive::SetTarget(double targetXPos, double targetYPos, double targetRotPos)
-{
-    ProfileTimer.Reset();
-    setpointX = (units::meter_t)(targetXPos);
-    setpointY = (units::meter_t)(targetYPos);
-    setpointRot = (units::radian_t)(targetRotPos * 0.0174533);
-}
-
+//Resets our position(called everytime a new setpoint is set)
 void Drive::ResetPosition(std::vector<double> currentPos)
 {
     units::meter_t currentflpos = (units::meter_t)(frontLeftEncoder.GetPosition());
@@ -59,6 +52,15 @@ void Drive::ResetPosition(std::vector<double> currentPos)
     frc::Rotation2d m_rotation{(units::degree_t)(currentPos[2])};
     frc::Pose2d m_visionPosition{(units::meter_t)(currentPos[0]), (units::meter_t)(currentPos[1]), m_rotation};
     m_poseEstimator.ResetPosition(gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), wheelPositions, m_visionPosition);
+}
+
+//autonomous auto positioning system
+void Drive::SetTarget(double targetXPos, double targetYPos, double targetRotPos)
+{
+    ProfileTimer.Reset();
+    setpointX = (units::meter_t)(targetXPos);
+    setpointY = (units::meter_t)(targetYPos);
+    setpointRot = (units::radian_t)(targetRotPos * 0.0174533);
 }
 
 void Drive::EstimatePosition(std::vector<double> currentPos)
@@ -103,6 +105,16 @@ void Drive::Track()
     frc::SmartDashboard::PutNumber("chassisspeedY", robotChassisSpeeds.vy());
     frc::SmartDashboard::PutNumber("chassisspeedOmega", robotChassisSpeeds.omega());
 
+    currentAngle = robotPos.Rotation().Radians() - setpointRot;
+    if(currentAngle < -(units::radian_t)(M_PI))
+    {
+        currentAngle = currentAngle + (units::radian_t)(2 * M_PI);
+    }
+    else if(currentAngle > (units::radian_t)(M_PI))
+    {
+        currentAngle = currentAngle - (units::radian_t)(2 * M_PI);
+    }
+
     currentTime = ProfileTimer.Get();
 
     auto velocityX = XProfile->Calculate(
@@ -119,8 +131,8 @@ void Drive::Track()
 
     auto velocityRot = RotProfile->Calculate(
        currentTime / 10,
-       frc::TrapezoidProfile<units::radians>::State { robotPos.Rotation().Radians(), speeds.omega},
-       frc::TrapezoidProfile<units::radians>::State { setpointRot, 0.0_rad_per_s}
+       frc::TrapezoidProfile<units::radians>::State { currentAngle, speeds.omega},
+       frc::TrapezoidProfile<units::radians>::State { 0.0_rad, 0.0_rad_per_s}
     );
 
     auto newSpeeds = frc::ChassisSpeeds::FromFieldRelativeSpeeds(velocityX.velocity, velocityY.velocity, velocityRot.velocity, robotPos.Rotation());
@@ -134,8 +146,6 @@ void Drive::Track()
     frc::SmartDashboard::PutNumber("newX", newSpeeds.vx());
     frc::SmartDashboard::PutNumber("newY", newSpeeds.vy());
     frc::SmartDashboard::PutNumber("newRot", newSpeeds.omega());
-    
-    
 
     frc::ChassisSpeeds chassisSpeeds{newSpeeds.vx, newSpeeds.vy, newSpeeds.omega};
     auto [fl, fr, bl, br] = m_kinematics.ToWheelSpeeds(chassisSpeeds);
@@ -145,6 +155,55 @@ void Drive::Track()
     backRightVelocity = br;
 }
 
+//Teleop auto aiming
+void Drive::SetShooterTarget(double targetRotPos)
+{
+    ProfileTimer.Reset();
+    setpointRot = (units::radian_t)(targetRotPos * 0.0174533);
+}
+
+void Drive::TrackTeleop()
+{
+    units::meters_per_second_t currentflvel = (units::meters_per_second_t)(frontLeftEncoder.GetVelocity());
+    units::meters_per_second_t currentfrvel = (units::meters_per_second_t)(frontRightEncoder.GetVelocity());
+    units::meters_per_second_t currentblvel = (units::meters_per_second_t)(backLeftEncoder.GetVelocity());
+    units::meters_per_second_t currentbrvel = (units::meters_per_second_t)(backRightEncoder.GetVelocity());
+    frc::MecanumDriveWheelSpeeds wheelSpeeds{currentflvel, currentfrvel, currentblvel, currentbrvel};
+
+    frc::Pose2d robotPos = m_poseEstimator.GetEstimatedPosition();
+    auto speeds = frc::ChassisSpeeds::FromRobotRelativeSpeeds(m_kinematics.ToChassisSpeeds(wheelSpeeds), robotPos.Rotation());
+
+    currentAngle = robotPos.Rotation().Radians() - setpointRot;
+    if(currentAngle < -(units::radian_t)(M_PI))
+    {
+        currentAngle = currentAngle + (units::radian_t)(2 * M_PI);
+    }
+    else if(currentAngle > (units::radian_t)(M_PI))
+    {
+        currentAngle = currentAngle - (units::radian_t)(2 * M_PI);
+    }
+
+    currentTime = ProfileTimer.Get();
+
+    auto velocityRot = RotProfile->Calculate(
+       currentTime / 10,
+       frc::TrapezoidProfile<units::radians>::State { currentAngle, speeds.omega},
+       frc::TrapezoidProfile<units::radians>::State { 0.0_rad, 0.0_rad_per_s}
+    );
+
+    frc::SmartDashboard::PutNumber("profiledRot", velocityRot.velocity.value());
+
+    auto newSpeeds = frc::ChassisSpeeds::FromFieldRelativeSpeeds(0.0_mps, 0.0_mps, velocityRot.velocity, robotPos.Rotation());
+
+    frc::ChassisSpeeds chassisSpeeds{0.0_mps, 0.0_mps, newSpeeds.omega};
+    auto [fl, fr, bl, br] = m_kinematics.ToWheelSpeeds(chassisSpeeds);
+    frontLeftVelocity = fl;
+    frontRightVelocity = fr;
+    backLeftVelocity = bl;
+    backRightVelocity = br;
+}
+
+//Setting the voltages
 void Drive::SetVoltages()
 {
     frontLeftMotor.SetVoltage(frontLeftFF.Calculate(frontLeftVelocity) + (units::volt_t)(frontLeftPID.Calculate(frontLeftEncoder.GetVelocity(), frontLeftVelocity.value())));
