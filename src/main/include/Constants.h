@@ -19,6 +19,7 @@ namespace OperatorConstants {
 inline constexpr int kDriverControllerPort = 0;
 const int limitSwitchID = 0;
 const int intakeSensorID = 1;
+const int SwitchID = 3;
 const int frontLeftID = 1;
 const int frontRightID = 2;
 const int backLeftID = 3;

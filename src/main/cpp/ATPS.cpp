@@ -9,7 +9,7 @@ ATPS::ATPS()
     ntinst = nt::NetworkTableInstance::GetDefault();
 }
 
-std::vector<double> ATPS::PositionSpeaker()
+std::vector<double> ATPS::PositionSpeaker(bool red, double X, double Y)
 {
     std::vector<double> pos(6);
     pos = ntinst.GetTable("limelight")->GetNumberArray("botpose", std::vector<double>(6));
@@ -19,7 +19,14 @@ std::vector<double> ATPS::PositionSpeaker()
     currentX = pos[0];
     currentY = pos[1];
     currentRot = pos[5];
-    distance = hypot((pos[0] - redCenterX), (pos[1] - redCenterY));
+    if(red)
+    {
+        distance = hypot((X - redCenterX), (Y - redCenterY));
+    }
+    else
+    {
+        distance = hypot((X - blueCenterX), (Y - blueCenterY));
+    }
     frc::SmartDashboard::PutNumber("Distance", distance);
     return std::vector<double> { pos[0], pos[1], pos[5] };
 }
@@ -37,9 +44,16 @@ double ATPS::ElevatorHeight()
     return elevatorPos;
 }
 
-double ATPS::AngleError()
+double ATPS::AngleError(bool red)
 {
-    angleError = atan2(currentY - redCenterY, currentX - redCenterX) * 57.2958;
-    frc::SmartDashboard::PutNumber("Angle Error", angleError - currentRot);
+    if(red)
+    {
+        angleError = atan2(currentY - redCenterY, currentX - redCenterX) * 57.2958;
+    }
+    else
+    {
+        angleError = atan2(currentY - blueCenterY, currentX - blueCenterX) * 57.2958;
+    }
+    frc::SmartDashboard::PutNumber("Angle Error", angleError);
     return angleError;
 }

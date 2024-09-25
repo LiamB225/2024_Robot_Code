@@ -11,6 +11,11 @@
 #include <frc/XboxController.h>
 #include <frc/Compressor.h>
 #include <vector>
+#include <frc/Timer.h>
+#include <units/time.h>
+#include <frc/DigitalInput.h>
+#include <frc/smartdashboard/SmartDashboard.h>
+#include <frc/smartdashboard/SendableChooser.h>
 
 #include "Drive.h"
 #include "Constants.h"
@@ -39,6 +44,13 @@ class Robot : public frc::TimedRobot {
   Shooter *m_Shooter;
   Climber *m_Climber;
 
+  frc::SendableChooser<std::string> m_chooser;
+  const std::string kautoLeft = "Left";
+  const std::string kautoCenter = "Center";
+  const std::string kautoRight = "Right";
+  std::string autoSelected;
+
+
   //Xbox Controller
   void GetXbox();
   frc::XboxController Xbox { OperatorConstants::kDriverControllerPort };
@@ -52,7 +64,9 @@ class Robot : public frc::TimedRobot {
   bool xboxLeftBumper = false;
   bool xboxB = false;
   bool xboxA = false;
-  bool xboxX = true;
+  bool xboxX = false;
+  bool manualShoot = false;
+  bool manualIntake = false;
 
   //auto shooting
   bool runOnceShooter = true;
@@ -65,6 +79,18 @@ class Robot : public frc::TimedRobot {
   void Intake();
   void IntakeLimited();
   void ElevatorControl();
+  frc::Timer Timer;
+  frc::DigitalInput Switch { OperatorConstants::SwitchID };
+  bool m_switch = false;
+  void RedAuto();
+  void BlueAuto();
+  bool teleop = false;
+  const std::vector<double> redCenterPos { 6.928, 1.442593, 180.0 };
+  const std::vector<double> redLeftPos { 7.622467, 0.2544062, -120.0 };
+  const std::vector<double> redRightPos { 7.622467, 2.630779, 120.0 };
+  const std::vector<double> blueCenterPos { -6.928, 11.442593, 0.0 };
+  const std::vector<double> blueLeftPos { -7.622467, 2.630779, 60.0 };
+  const std::vector<double> blueRightPos { -7.622467, 0.2544062, -60.0 };
 
   //Drive Train
   void NormalDrive();

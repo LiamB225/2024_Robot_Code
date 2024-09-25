@@ -44,7 +44,12 @@ void Shooter::Shoot(double elevatorHeight, double angleError, double actualAngle
     rightShooterMotor.Set(1.0);
     frc::SmartDashboard::PutNumber("Left Velocity", leftShooterEncoder.GetVelocity());
     frc::SmartDashboard::PutNumber("Right Velocity", rightShooterEncoder.GetVelocity());
-    if(elevatorEncoder.GetPosition() > elevatorHeight - 5.0 && elevatorEncoder.GetPosition() < elevatorHeight + 5.0)
+    if(elevatorEncoder.GetPosition() > elevatorHeight - 5.0 &&
+     elevatorEncoder.GetPosition() < elevatorHeight + 5.0 &&
+     angleError - actualAngle < 2.0 &&
+     angleError - actualAngle > -2.0 && 
+     leftShooterEncoder.GetVelocity() > 5000.0 && 
+     rightShooterEncoder.GetVelocity() > 5000.0)
     {
         IntakeIn();
     }

@@ -34,6 +34,7 @@ Drive::Drive()
     YProfile = new frc::TrapezoidProfile<units::meters>(constraintsY);
     RotProfile = new frc::TrapezoidProfile<units::radians>(constraintsRot);
     ProfileTimer.Start();
+    ProfileTimer2.Start();
 }
 
 void Drive::Cartesian(double drivePower, double strafePower, double turnPower)
@@ -81,6 +82,18 @@ void Drive::EstimatePosition(std::vector<double> currentPos)
 
     frc::Rotation2d gyroRotation{gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw)};
     m_poseEstimator.UpdateWithTime(ProfileTimer.Get(), gyroRotation, wheelPositions);
+}
+
+double Drive::GetEstimateX()
+{
+    frc::Pose2d robotPosX = m_poseEstimator.GetEstimatedPosition();
+    return robotPosX.X().value();
+}
+
+double Drive::GetEstimateY()
+{
+    frc::Pose2d robotPosY = m_poseEstimator.GetEstimatedPosition();
+    return robotPosY.Y().value();
 }
 
 void Drive::Track()
@@ -158,8 +171,8 @@ void Drive::Track()
 //Teleop auto aiming
 void Drive::SetShooterTarget(double targetRotPos)
 {
-    ProfileTimer.Reset();
-    setpointRot = (units::radian_t)(targetRotPos * 0.0174533);
+    ProfileTimer2.Reset();
+    setpointRot2 = (units::radian_t)(targetRotPos * 0.0174533);
 }
 
 void Drive::TrackTeleop()
@@ -173,21 +186,21 @@ void Drive::TrackTeleop()
     frc::Pose2d robotPos = m_poseEstimator.GetEstimatedPosition();
     auto speeds = frc::ChassisSpeeds::FromRobotRelativeSpeeds(m_kinematics.ToChassisSpeeds(wheelSpeeds), robotPos.Rotation());
 
-    currentAngle = robotPos.Rotation().Radians() - setpointRot;
-    if(currentAngle < -(units::radian_t)(M_PI))
+    currentAngle2 = robotPos.Rotation().Radians() - setpointRot2;
+    if(currentAngle2 < -(units::radian_t)(M_PI))
     {
-        currentAngle = currentAngle + (units::radian_t)(2 * M_PI);
+        currentAngle2 = currentAngle2 + (units::radian_t)(2 * M_PI);
     }
-    else if(currentAngle > (units::radian_t)(M_PI))
+    else if(currentAngle2 > (units::radian_t)(M_PI))
     {
-        currentAngle = currentAngle - (units::radian_t)(2 * M_PI);
+        currentAngle2 = currentAngle2 - (units::radian_t)(2 * M_PI);
     }
 
-    currentTime = ProfileTimer.Get();
+    currentTime2 = ProfileTimer2.Get();
 
     auto velocityRot = RotProfile->Calculate(
-       currentTime / 10,
-       frc::TrapezoidProfile<units::radians>::State { currentAngle, speeds.omega},
+       currentTime2 / 10,
+       frc::TrapezoidProfile<units::radians>::State { currentAngle2, speeds.omega},
        frc::TrapezoidProfile<units::radians>::State { 0.0_rad, 0.0_rad_per_s}
     );
 

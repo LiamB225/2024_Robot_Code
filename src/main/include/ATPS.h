@@ -18,9 +18,9 @@ class ATPS {
 
   nt::NetworkTableInstance ntinst;
 
-  std::vector<double> PositionSpeaker();
+  std::vector<double> PositionSpeaker(bool red, double X, double Y);
   double ElevatorHeight();
-  double AngleError();
+  double AngleError(bool red);
 
   double currentX = 0.0;
   double currentY = 0.0;
@@ -30,4 +30,6 @@ class ATPS {
   double elevatorPos = 0.0;
   double redCenterX = 8.308467;
   double redCenterY = 1.442593;
+  double blueCenterX = -8.308467;
+  double blueCenterY = 1.442593;
 };

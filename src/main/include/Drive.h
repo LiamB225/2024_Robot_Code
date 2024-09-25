@@ -30,20 +30,22 @@ class Drive {
   Drive();
 
   frc::TrapezoidProfile<units::meters> *XProfile;
-  frc::TrapezoidProfile<units::meters>::Constraints constraintsX{ 1.0_mps, 1.0_mps_sq };
+  frc::TrapezoidProfile<units::meters>::Constraints constraintsX{ 2.0_mps, 2.0_mps_sq };
   units::meter_t setpointX;
 
   frc::TrapezoidProfile<units::meters> *YProfile;
-  frc::TrapezoidProfile<units::meters>::Constraints constraintsY{ 1.0_mps, 1.0_mps_sq };
+  frc::TrapezoidProfile<units::meters>::Constraints constraintsY{ 2.0_mps, 2.0_mps_sq };
   units::meter_t setpointY;
 
   frc::TrapezoidProfile<units::radians> *RotProfile;
   frc::TrapezoidProfile<units::radians>::Constraints constraintsRot{ 2.0_rad_per_s, 5.0_rad_per_s / 1_s };
   units::radian_t setpointRot;
+  units::radian_t setpointRot2;
 
   frc::Timer ProfileTimer;
   units::second_t currentTime = 0.0_s;
-  units::second_t lastTime = 0.0_s;
+  frc::Timer ProfileTimer2;
+  units::second_t currentTime2 = 0.0_s;
 
   double kPFrontLeft = 0.70234;
   double kPFrontRight = 1.3031;
@@ -95,6 +97,8 @@ class Drive {
   void TrackTeleop();
   void SetShooterTarget(double targetRotPos);
   void SetVoltages();
+  double GetEstimateX();
+  double GetEstimateY();
 
   rev::CANSparkMax frontLeftMotor {OperatorConstants::frontLeftID, rev::CANSparkMax::MotorType::kBrushless};
   rev::SparkRelativeEncoder frontLeftEncoder = frontLeftMotor.GetEncoder();
@@ -116,4 +120,5 @@ class Drive {
   frc::Pose2d notPosition;
   frc::MecanumDrivePoseEstimator m_poseEstimator { m_kinematics, gyro.GetAngle(frc::ADIS16470_IMU::IMUAxis::kYaw), notWheelPositions, notPosition};
   units::radian_t currentAngle = 0.0_rad;
+  units::radian_t currentAngle2 = 0.0_rad;
 };

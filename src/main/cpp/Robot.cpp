@@ -18,12 +18,19 @@ void Robot::RobotInit()
   m_Climber = new Climber();
 
   Compressor.EnableDigital();
+  Timer.Start();
+  m_chooser.SetDefaultOption(kautoCenter, kautoCenter);
+  m_chooser.AddOption(kautoLeft, kautoLeft);
+  m_chooser.AddOption(kautoRight, kautoRight);
+  frc::SmartDashboard::PutData("Auto Mode", &m_chooser);
 }
 
 void Robot::RobotPeriodic()
 {
-  m_Drive->EstimatePosition(m_ATPS->PositionSpeaker());
-  currentPos = m_ATPS->PositionSpeaker();
+  m_switch = Switch.Get();
+  frc::SmartDashboard::PutBoolean("switch", m_switch);
+  m_Drive->EstimatePosition(m_ATPS->PositionSpeaker(m_switch, m_Drive->GetEstimateX(), m_Drive->GetEstimateY()));
+  currentPos = m_ATPS->PositionSpeaker(m_switch, m_Drive->GetEstimateX(), m_Drive->GetEstimateY());
   //frc2::CommandScheduler::GetInstance().Run();
 }
 
@@ -33,39 +40,81 @@ void Robot::DisabledPeriodic() {}
 
 void Robot::AutonomousInit()
 {
-  while(currentPos[0] == 0.0 && currentPos[1] == 0.0 && currentPos[2] == 0.0)
+  autoSelected = m_chooser.GetSelected();
+  if(m_switch)
   {
-   currentPos = m_ATPS->PositionSpeaker();
+    if(autoSelected == kautoCenter)
+    {
+      m_Drive->ResetPosition(redCenterPos);
+    }
+    else if(autoSelected == kautoLeft)
+    {
+      m_Drive->ResetPosition(redLeftPos);
+    }
+    else
+    {
+      m_Drive->ResetPosition(redRightPos);
+    }
   }
-  m_Drive->ResetPosition(currentPos);
-  m_Drive->SetTarget(5.8, 1.44, 179);
+  else
+  {
+    if(autoSelected == kautoCenter)
+    {
+      m_Drive->ResetPosition(blueCenterPos);
+    }
+    else if(autoSelected == kautoLeft)
+    {
+      m_Drive->ResetPosition(blueLeftPos);
+    }
+    else
+    {
+      m_Drive->ResetPosition(blueRightPos);
+    }
+  }
+  m_Drive->SetTarget(5.0, 1.442593, 180.0);
+  Timer.Reset();
+  xboxX = true;
 }
 
 void Robot::AutonomousPeriodic()
 {
-  m_Drive->Track();
-  m_Drive->SetVoltages();
+  frc::SmartDashboard::PutNumber("Time", Timer.Get().value());
+  if(m_switch)
+  {
+    RedAuto();
+  }
+  else
+  {
+    BlueAuto();
+  }
 }
 
 void Robot::TeleopInit()
 {
   m_Climber->PistonsIn();
+  xboxX = false;
 }
 
 void Robot::TeleopPeriodic()
 {
   //Get Xbox Inputs
   GetXbox();
+  teleop = true;
 
   //Flywheels
   if(xboxY)
   {
     AutoShoot();
   }
+  else if(manualShoot)
+  {
+    m_Shooter->AutoElevatorControl(500.0);
+    m_Shooter->Shoot(500.0, 0.0, 0.0);
+  }
   else
   {
     //Intake
-    if(m_Shooter->GetIntakeSensor())
+    if(m_Shooter->GetIntakeSensor() || manualIntake)
     {
       //Elevator
       if(xboxB)
@@ -81,7 +130,14 @@ void Robot::TeleopPeriodic()
     else
     {
       IntakeLimited();
-      EstimateElevatorHeight();
+      if(xboxB)
+      {
+        ElevatorControl();
+      }
+      else
+      {
+        m_Shooter->ZeroElevator();
+      }
     }
     
     StopAutoShoot();
@@ -153,10 +209,16 @@ void Robot::GetXbox()
   {
     xboxB =! xboxB;
   }
-  frc::SmartDashboard::PutNumber("B", xboxB);
+  frc::SmartDashboard::PutBoolean("B", xboxB);
+  frc::SmartDashboard::PutBoolean("X", xboxX);
 
   //Piston Controls
   xboxA = Xbox.GetAButtonPressed();
+  manualShoot = Xbox.GetStartButton();
+  if(Xbox.GetBackButtonPressed())
+  {
+    manualIntake =! manualIntake;
+  }
 }
 
 void Robot::NormalDrive()
@@ -169,14 +231,14 @@ void Robot::AutoShoot()
   //auto aiming
   if(currentPos[0] != 0.0 && currentPos[1] != 0.0 && currentPos[2] != 0.0 && runOnceShooter)
   {
-    m_Drive->ResetPosition(m_ATPS->PositionSpeaker());
+    m_Drive->ResetPosition(m_ATPS->PositionSpeaker(m_switch, m_Drive->GetEstimateX(), m_Drive->GetEstimateY()));
     runOnceShooter = false;
   }
   else
   {
     xboxY = false;
   }
-  m_Shooter->Shoot(elevatorHeight, angleError, currentPos[0]);
+  m_Shooter->Shoot(elevatorHeight, angleError, currentPos[2]);
   m_Drive->TrackTeleop();
   m_Drive->SetVoltages();
   m_Shooter->AutoElevatorControl(elevatorHeight);
@@ -184,11 +246,18 @@ void Robot::AutoShoot()
 }
 
 void Robot::StopAutoShoot()
-{
-  m_Shooter->StopShooting(xboxX);
-  m_Drive->SetShooterTarget(m_ATPS->AngleError());
+{ 
+  if(teleop)
+  {
+    m_Shooter->StopShooting(xboxX);
+  }
+  else
+  {
+    m_Shooter->StopShooting(true);
+  }
+  m_Drive->SetShooterTarget(m_ATPS->AngleError(m_switch));
   elevatorHeight = m_ATPS->ElevatorHeight();
-  angleError = m_ATPS->AngleError();
+  angleError = m_ATPS->AngleError(m_switch);
   runOnceShooter = true;
 }
 
@@ -257,6 +326,275 @@ void Robot::ElevatorControl()
   else
   {
     m_Shooter->StopElevator();
+  }
+}
+
+void Robot::RedAuto()
+{
+  // if(Timer.Get() > 13.75_s)
+  // {
+  //   AutoShoot();
+  // }
+  // else if(Timer.Get() > 11.5_s)
+  // {
+  //   StopAutoShoot();
+  //   m_Drive->Track();
+  //   m_Drive->SetVoltages();
+  //   m_Shooter->AutoElevatorControl(400.0);
+  //   if(m_Shooter->GetIntakeSensor())
+  //   {
+  //     m_Shooter->IntakeIn();
+  //   }
+  //   else
+  //   {
+  //     m_Shooter->StopIntake();
+  //   }
+  // }
+  // else if(Timer.Get() > 11.4_s)
+  // {
+  //   m_Drive->SetTarget(6.7, 2.13, 158.0);
+  //   m_Shooter->ZeroElevator();
+  // }
+  // else if(Timer.Get() > 9.5_s)
+  // {
+  //   StopAutoShoot();
+  //   m_Drive->Track();
+  //   m_Drive->SetVoltages();
+  //   m_Shooter->ZeroElevator();
+  //   if(m_Shooter->GetIntakeSensor())
+  //   {
+  //     m_Shooter->IntakeIn();
+  //   }
+  //   else
+  //   {
+  //     m_Shooter->StopIntake();
+  //   }
+  // }
+  // else if(Timer.Get() > 8.25_s)
+  // {
+  //   m_Shooter->ZeroElevator();
+  // }
+  if(autoSelected == kautoCenter)
+  {
+    if(Timer.Get() > 8.0_s)
+    {
+      //m_Drive->SetTarget(5.8, 2.89, 158.0);
+      AutoShoot();
+    }
+    else if(Timer.Get() > 5.0_s)
+    {
+      StopAutoShoot();
+      m_Drive->Track();
+      m_Drive->SetVoltages();
+      m_Shooter->AutoElevatorControl(400.0);
+      if(m_Shooter->GetIntakeSensor())
+      {
+        m_Shooter->IntakeIn();
+      }
+      else
+      {
+        m_Shooter->StopIntake();
+      }
+    }
+    else if (Timer.Get() > 4.9_s)
+    {
+      m_Drive->SetTarget(6.7, 1.442593, 180.0);
+      m_Shooter->ZeroElevator();
+    }
+    else if(Timer.Get() > 3.0_s)
+    {
+      StopAutoShoot();
+      m_Drive->Track();
+      m_Drive->SetVoltages();
+      m_Shooter->ZeroElevator();
+      if(m_Shooter->GetIntakeSensor())
+      {
+        m_Shooter->IntakeIn();
+      }
+      else
+      {
+        m_Shooter->StopIntake();
+      }
+    }
+    else if(Timer.Get() > 1.75_s)
+    {
+      m_Drive->SetTarget(5.5, 1.442593, 180.0);
+      m_Shooter->ZeroElevator();
+    }
+  }
+  else if(autoSelected == kautoLeft)
+  {
+    if(Timer.Get() > 3.0_s)
+    {
+      StopAutoShoot();
+      m_Drive->Track();
+      m_Drive->SetVoltages();
+      m_Shooter->ZeroElevator();
+    }
+    else if(Timer.Get() > 1.75_s)
+    {
+      m_Drive->SetTarget(5.5, -1.5, -135.0);
+      m_Shooter->ZeroElevator();
+    }
+  }
+  else
+  {
+    if(Timer.Get() > 3.0_s)
+    {
+      StopAutoShoot();
+      m_Drive->Track();
+      m_Drive->SetVoltages();
+      m_Shooter->ZeroElevator();
+    }
+    else if(Timer.Get() > 1.75_s)
+    {
+      m_Drive->SetTarget(5.5, 1.442593, 180.0);
+      m_Shooter->ZeroElevator();
+    }
+  }
+  
+  if(Timer.Get() > 1_s)
+  {
+    m_Shooter->IntakeIn();
+  }
+  else
+  {
+    StopAutoShoot();
+  }
+}
+
+void Robot::BlueAuto()
+{
+  // if(Timer.Get() > 13.75_s)
+  // {
+  //   AutoShoot();
+  // }
+  // else if(Timer.Get() > 11.5_s)
+  // {
+  //   StopAutoShoot();
+  //   m_Drive->Track();
+  //   m_Drive->SetVoltages();
+  //   m_Shooter->AutoElevatorControl(400.0);
+  //   if(m_Shooter->GetIntakeSensor())
+  //   {
+  //     m_Shooter->IntakeIn();
+  //   }
+  //   else
+  //   {
+  //     m_Shooter->StopIntake();
+  //   }
+  // }
+  // else if(Timer.Get() > 11.4_s)
+  // {
+  //   m_Drive->SetTarget(-6.7, 2.13, 22.0);
+  //   m_Shooter->ZeroElevator();
+  // }
+  // else if(Timer.Get() > 9.5_s)
+  // {
+  //   StopAutoShoot();
+  //   m_Drive->Track();
+  //   m_Drive->SetVoltages();
+  //   m_Shooter->ZeroElevator();
+  //   if(m_Shooter->GetIntakeSensor())
+  //   {
+  //     m_Shooter->IntakeIn();
+  //   }
+  //   else
+  //   {
+  //     m_Shooter->StopIntake();
+  //   }
+  // }
+  // else if(Timer.Get() > 8.25_s)
+  // {
+  //   m_Shooter->ZeroElevator();
+  // }
+  if(autoSelected == kautoCenter)
+  {
+    if(Timer.Get() > 8.0_s)
+    {
+      //m_Drive->SetTarget(-5.7, 2.89, 50.0);
+      AutoShoot();
+    }
+    else if(Timer.Get() > 5.0_s)
+    {
+      StopAutoShoot();
+      m_Drive->Track();
+      m_Drive->SetVoltages();
+      m_Shooter->AutoElevatorControl(400.0);
+      if(m_Shooter->GetIntakeSensor())
+      {
+        m_Shooter->IntakeIn();
+      }
+      else
+      {
+        m_Shooter->StopIntake();
+      }
+    }
+    else if (Timer.Get() > 4.9_s)
+    {
+      m_Drive->SetTarget(-6.7, 1.442593, 0.0);
+      m_Shooter->ZeroElevator();
+    }
+    else if(Timer.Get() > 3.0_s)
+    {
+      StopAutoShoot();
+      m_Drive->Track();
+      m_Drive->SetVoltages();
+      m_Shooter->ZeroElevator();
+      if(m_Shooter->GetIntakeSensor())
+      {
+        m_Shooter->IntakeIn();
+      }
+      else
+      {
+        m_Shooter->StopIntake();
+      }
+    }
+    else if(Timer.Get() > 1.75_s)
+    {
+      m_Drive->SetTarget(-5.5, 1.442593, 0.0);
+      m_Shooter->ZeroElevator();
+    }
+  }
+  else if(autoSelected == kautoLeft)
+  {
+    if(Timer.Get() > 3.0_s)
+    {
+      StopAutoShoot();
+      m_Drive->Track();
+      m_Drive->SetVoltages();
+      m_Shooter->ZeroElevator();
+    }
+    else if(Timer.Get() > 1.75_s)
+    {
+      m_Drive->SetTarget(5.5, -1.5, -135.0);
+      m_Shooter->ZeroElevator();
+    }
+  }
+  else
+  {
+    if(Timer.Get() > 3.0_s)
+    {
+      StopAutoShoot();
+      m_Drive->Track();
+      m_Drive->SetVoltages();
+      m_Shooter->ZeroElevator();
+    }
+    else if(Timer.Get() > 1.75_s)
+    {
+      m_Drive->SetTarget(-5.5, -1.5, -45.0);
+      m_Shooter->ZeroElevator();
+    }
+  }
+  
+  
+  if(Timer.Get() > 1_s)
+  {
+    m_Shooter->IntakeIn();
+  }
+  else
+  {
+    StopAutoShoot();
   }
 }
 
